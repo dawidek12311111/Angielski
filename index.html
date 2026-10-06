@@ -8,13 +8,13 @@
   :root{
     --bg:#f6f4ef; --card:#ffffff; --text:#1d1d1f; --muted:#6b6b70;
     --accent:#2f5d50; --accent-soft:#e3ece8; --border:#e4e1da; --danger:#b3412f; --danger-soft:#f6e3df;
-    --good:#2f7a4b; --good-soft:#dff1e5;
+    --good:#2f7a4b; --good-soft:#dff1e5; --warn-soft:#fbf0d9; --warn:#8a5a00;
   }
   @media (prefers-color-scheme: dark){
     :root{
       --bg:#141517; --card:#1e2023; --text:#ececec; --muted:#9a9ca1;
       --accent:#7fbfa8; --accent-soft:#24332d; --border:#2c2f33; --danger:#e07a68; --danger-soft:#3a2420;
-      --good:#7cc79a; --good-soft:#1f3327;
+      --good:#7cc79a; --good-soft:#1f3327; --warn-soft:#3a3020; --warn:#e8c27a;
     }
   }
   *{box-sizing:border-box}
@@ -23,11 +23,15 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.45}
   .wrap{max-width:640px;margin:0 auto;padding:18px 16px calc(96px + env(safe-area-inset-bottom))}
   header{margin-bottom:16px}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:8px}
   h1{font-size:1.5rem;margin:0}
+  .db{font-size:.78rem;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:99px;padding:4px 10px;white-space:nowrap}
   .stats{display:flex;align-items:center;gap:10px;margin-top:6px;color:var(--muted);font-size:.9rem}
   .bar{flex:1;height:6px;border-radius:99px;background:var(--border);overflow:hidden}
   .bar > div{height:100%;background:var(--good);width:0;transition:width .3s}
   .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px}
+  .card h2{font-size:1.05rem;margin:0 0 6px}
+  .card p{margin:6px 0;color:var(--muted);font-size:.9rem}
   label{display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin:12px 0 4px;text-transform:uppercase;letter-spacing:.04em}
   label:first-child{margin-top:0}
   input{width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font:inherit}
@@ -35,12 +39,15 @@
   .row{display:flex;gap:8px;align-items:center}
   .row > input{flex:1}
   button{font:inherit;border:none;border-radius:10px;padding:11px 14px;cursor:pointer;background:var(--accent-soft);color:var(--accent);font-weight:600}
+  button:disabled{opacity:.5;cursor:default}
   button.primary{background:var(--accent);color:var(--card)}
   button.wide{width:100%;margin-top:14px}
   button.small{padding:7px 10px;font-size:.85rem}
   button.ghost{background:transparent;color:var(--muted)}
   button.danger{color:var(--danger);background:transparent}
-  .status{font-size:.82rem;color:var(--muted);margin-top:6px;min-height:1.2em}
+  button.link{background:none;padding:0;color:var(--accent);text-decoration:underline;font-weight:600;font-size:inherit}
+  .status{font-size:.84rem;color:var(--muted);margin-top:6px;min-height:1.2em}
+  .fix{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:8px 10px;margin-top:8px;font-size:.88rem}
   .chips{display:flex;gap:6px;margin:10px 0 8px;flex-wrap:wrap}
   .chip{padding:7px 12px;border-radius:99px;font-size:.85rem;background:var(--card);border:1px solid var(--border);color:var(--muted)}
   .chip.on{background:var(--accent);border-color:var(--accent);color:var(--card)}
@@ -57,10 +64,8 @@
   .actions{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
   .knownBtn.on{background:var(--good-soft);color:var(--good)}
   .empty{text-align:center;color:var(--muted);padding:30px 10px}
-  .footer{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
-  .footer button{flex:1}
+  .ok{color:var(--good)} .bad{color:var(--danger)}
 
-  /* Nauka */
   .flash{min-height:260px;display:flex;flex-direction:column;justify-content:center;text-align:center;cursor:pointer}
   .flash .front{font-size:1.5rem;font-weight:700;line-height:1.3}
   .flash .hint{color:var(--muted);font-size:.85rem;margin-top:14px}
@@ -73,11 +78,10 @@
   .no{background:var(--danger-soft);color:var(--danger)}
   .yes{background:var(--good-soft);color:var(--good)}
 
-  /* Menu */
   nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--border);
     display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom);z-index:5}
   nav .in{display:flex;max-width:640px;width:100%}
-  nav button{flex:1;background:transparent;border-radius:0;color:var(--muted);padding:10px 4px 12px;font-size:.78rem;
+  nav button{flex:1;background:transparent;border-radius:0;color:var(--muted);padding:10px 4px 12px;font-size:.75rem;
     display:flex;flex-direction:column;align-items:center;gap:2px}
   nav button span{font-size:1.3rem;line-height:1}
   nav button.on{color:var(--accent)}
@@ -91,19 +95,20 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>Mój angielski</h1>
+    <div class="top"><h1>Mój angielski</h1><span class="db" id="dbBadge">…</span></div>
     <div class="stats"><span id="statsText"></span><div class="bar"><div id="statsBar"></div></div></div>
   </header>
 
   <!-- DODAJ -->
   <section class="tab" id="tab-add">
     <div class="card">
-      <label for="en">Po angielsku</label>
+      <label for="en">Po angielsku (albo po polsku)</label>
       <div class="row">
-        <input id="en" placeholder="wpisz słowo lub zdanie…" autocomplete="off" autocapitalize="off">
+        <input id="en" placeholder="wpisz słowo lub zdanie…" autocomplete="off" autocapitalize="off" spellcheck="false">
         <button class="small" id="speakInput" title="Odsłuchaj">🔊</button>
       </div>
-      <div class="status" id="autoStatus">Reszta uzupełni się sama — możesz ją potem poprawić.</div>
+      <div class="status" id="autoStatus"></div>
+      <div id="fixBox"></div>
 
       <label for="pl">Tłumaczenie</label>
       <input id="pl" autocomplete="off">
@@ -133,11 +138,6 @@
     </div>
     <div class="count" id="count"></div>
     <div id="list"></div>
-    <div class="footer">
-      <button class="small" id="export">⬇ Kopia zapasowa</button>
-      <button class="small" id="importBtn">⬆ Wczytaj kopię</button>
-      <input type="file" id="importFile" accept=".json" style="display:none">
-    </div>
   </section>
 
   <!-- NAUKA -->
@@ -149,36 +149,139 @@
     </div>
     <div id="learn"></div>
   </section>
+
+  <!-- USTAWIENIA -->
+  <section class="tab" id="tab-settings">
+    <div class="card">
+      <h2>🤖 Gemini (tłumaczenie i poprawki)</h2>
+      <p>Klucz z Google AI Studio. Zapisuje się tylko w tej przeglądarce — nie trafia do GitHuba ani do bazy.</p>
+      <label for="gKey">Klucz API</label>
+      <div class="row">
+        <input id="gKey" type="password" placeholder="AIza…" autocomplete="off">
+        <button class="small" id="gSave">Zapisz</button>
+      </div>
+      <div class="status" id="gStatus"></div>
+    </div>
+
+    <div class="card">
+      <h2>☁️ Baza danych</h2>
+      <p id="dbInfo"></p>
+      <div id="migrateBox"></div>
+    </div>
+
+    <div class="card">
+      <h2>💾 Kopia zapasowa</h2>
+      <p>Plik .json ze wszystkimi słówkami — na wszelki wypadek albo żeby wczytać nowe.</p>
+      <div class="row">
+        <button class="small" id="export" style="flex:1">⬇ Pobierz kopię</button>
+        <button class="small" id="importBtn" style="flex:1">⬆ Wczytaj plik</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" style="display:none">
+    </div>
+  </section>
 </div>
 
 <nav><div class="in">
   <button data-tab="add"><span>➕</span>Dodaj</button>
   <button data-tab="list"><span>📚</span>Lista</button>
   <button data-tab="learn"><span>🎯</span>Nauka</button>
+  <button data-tab="settings"><span>⚙️</span>Ustawienia</button>
 </div></nav>
 <div class="toast" id="toast"></div>
 
-<script>
-const KEY = "moj-angielski-v1";
+<script type="module">
+/* =====================================================================
+   1) WKLEJ TUTAJ firebaseConfig — ten sam, co w „Progress dietowy”
+      (słówka trafią do osobnej kolekcji „slowka”, dieta zostaje nietknięta)
+   ===================================================================== */
+const firebaseConfig = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+const COLLECTION = "slowka";
+/* ===================================================================== */
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, writeBatch }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const LOCAL_KEY = "moj-angielski-v1";
 const $ = id => document.getElementById(id);
 let items = [];
 let editingId = null;
 
-/* ---------- zapis ---------- */
-function load(){ try { items = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ items = []; } }
-function persist(){ try { localStorage.setItem(KEY, JSON.stringify(items)); } catch(e){ toast("Nie udało się zapisać"); } updateStats(); }
-function pref(k, v){ try{ if(v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }catch(e){ return null; } }
-function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),1800); }
+function pref(k, v){ try{ if(v === undefined) return localStorage.getItem(k); if(v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); }catch(e){ return null; } }
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2000); }
 function esc(s){ return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function byId(id){ return items.find(i => i.id === id); }
+function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function readLocal(){ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY)) || []; }catch(e){ return []; } }
+
+/* ================= MAGAZYN: Firebase albo (awaryjnie) to urządzenie ================= */
+const cloud = !!(firebaseConfig.apiKey && firebaseConfig.projectId);
+let db = null, col = null;
+
+const store = {
+  async add(it){ if(cloud) return setDoc(doc(col, it.id), clean(it)); items.unshift(it); saveLocal(); },
+  async update(id, data){ if(cloud) return updateDoc(doc(col, id), data); Object.assign(byId(id), data); saveLocal(); },
+  async remove(id){ if(cloud) return deleteDoc(doc(col, id)); items = items.filter(i => i.id !== id); saveLocal(); },
+  async bulk(list){
+    if(cloud){
+      for(let i = 0; i < list.length; i += 400){
+        const b = writeBatch(db);
+        list.slice(i, i+400).forEach(it => b.set(doc(col, it.id), clean(it), {merge:true}));
+        await b.commit();
+      }
+      return;
+    }
+    const ids = new Set(items.map(i => i.id));
+    items = [...list.filter(i => !ids.has(i.id)), ...items]; saveLocal();
+  }
+};
+function clean(it){
+  return { en:it.en||"", pl:it.pl||"", pron:it.pron||"", exEn:it.exEn||"", exPl:it.exPl||"",
+           known:!!it.known, added:it.added || new Date().toISOString() };
+}
+function saveLocal(){ try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(items)); }catch(e){ toast("Nie udało się zapisać"); } dataChanged(); }
+function fail(e){ console.error(e); toast(/permission/i.test(e && e.message) ? "Baza odmówiła dostępu (reguły Firestore)" : "Błąd zapisu w bazie"); }
+
+function sortItems(){ items.sort((a,b) => (b.added||"").localeCompare(a.added||"") || a.id.localeCompare(b.id)); }
+
+function dataChanged(){
+  updateStats();
+  if($("tab-list").classList.contains("on")) renderList();
+  if($("tab-settings").classList.contains("on")) renderSettings();
+}
+
+function startStorage(){
+  if(cloud){
+    db = getFirestore(initializeApp(firebaseConfig));
+    col = collection(db, COLLECTION);
+    $("dbBadge").textContent = "☁️ łączę…";
+    onSnapshot(col, snap => {
+      items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      sortItems();
+      $("dbBadge").textContent = "☁️ baza";
+      dataChanged();
+    }, err => { console.error(err); $("dbBadge").textContent = "⚠️ brak bazy"; toast("Nie mogę połączyć z bazą"); });
+  } else {
+    items = readLocal();
+    $("dbBadge").textContent = "📱 lokalnie";
+    dataChanged();
+  }
+}
 
 function updateStats(){
   const k = items.filter(i => i.known).length;
-  $("statsText").textContent = items.length ? `Znasz ${k} z ${items.length}` : "Dodaj pierwsze słówko";
+  $("statsText").textContent = items.length ? `Znasz ${k} z ${items.length}` : "Brak słówek";
   $("statsBar").style.width = items.length ? (k/items.length*100)+"%" : "0";
 }
 
-/* ---------- mowa ---------- */
+/* ================= MOWA ================= */
 function speak(text){
   if(!text || !("speechSynthesis" in window)) return toast("Brak tekstu do odsłuchania");
   speechSynthesis.cancel();
@@ -190,40 +293,75 @@ function speak(text){
   speechSynthesis.speak(u);
 }
 
-/* ---------- menu ---------- */
+/* ================= MENU ================= */
 function showTab(name){
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.id === "tab-"+name));
   document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === name));
   pref("tab", name);
   if(name === "list") renderList();
   if(name === "learn") startDeck();
+  if(name === "settings") renderSettings();
+  if(name === "add") idleStatus();
   window.scrollTo(0,0);
 }
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => showTab(b.dataset.tab));
 
-/* ================= AUTOMATYCZNE UZUPEŁNIANIE ================= */
-const FIELDS = ["pl","pron","exEn","exPl"];
-let autoFilled = {};          // pola wypełnione automatycznie (można je nadpisać)
-let autoSeq = 0, autoTimer = null;
-const dictCache = new Map();
+/* ================= GEMINI ================= */
+const MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash"];
+const PROMPT = `Jesteś pomocnikiem do nauki angielskiego dla Polaka. Dostajesz wpis użytkownika: słowo, zwrot albo zdanie.
+Wpis może mieć literówki i błędy gramatyczne albo być napisany po polsku.
+Zwróć WYŁĄCZNIE obiekt JSON z polami:
+- "en": poprawna, naturalna wersja po angielsku (popraw literówki i gramatykę; jeśli wpis jest po polsku – przetłumacz go na angielski). Pojedyncze słowa i zwroty małą literą, zdania wielką literą i z kropką.
+- "fixed": true, jeśli coś poprawiłeś albo przetłumaczyłeś z polskiego; inaczej false.
+- "note": jeśli fixed=true – bardzo krótko po polsku, co było źle (np. "literówka: recieve → receive"); inaczej "".
+- "pl": naturalne tłumaczenie na polski. Dla pojedynczego słowa 1–3 najczęstsze znaczenia oddzielone przecinkami.
+- "pron": brytyjska wymowa całego "en" zapisana polskimi literami, tak jak przeczytałby ją Polak, bez IPA i bez akcentów. Przykłady: "headache" → "hedejk", "I would like a coffee" → "aj łud lajk e kofi", "thought" → "fot", "the" → "de", "whisper" → "łysper".
+- "exEn": jeśli wpis to słowo lub krótki zwrot – jedno proste, naturalne zdanie przykładowe z nim; jeśli wpis to całe zdanie – "".
+- "exPl": tłumaczenie exEn na polski albo "".
+Wpis: `;
 
-function fillable(f){ return !$(f).value.trim() || autoFilled[f]; }
-function setAuto(f, val, force){
-  if(!val) return;
-  if(force || fillable(f)){ $(f).value = val; autoFilled[f] = true; }
+async function gemini(text){
+  const key = pref("geminiKey");
+  if(!key) throw new Error("NOKEY");
+  const order = [pref("geminiModel"), ...MODELS].filter((m,i,a) => m && a.indexOf(m) === i);
+  let lastErr;
+  for(const model of order){
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: PROMPT + text }] }],
+        generationConfig: { responseMimeType: "application/json", temperature: 0.2 }
+      })
+    });
+    const d = await r.json().catch(() => ({}));
+    const msg = (d.error && d.error.message) || ("HTTP " + r.status);
+    if(!r.ok){
+      // model niedostępny / bez darmowego limitu – próbuj następnego
+      if((r.status === 404 || r.status === 429 || (r.status === 400 && /model/i.test(msg))) && !/api key/i.test(msg)){
+        lastErr = new Error(msg); continue;
+      }
+      throw new Error(/api key/i.test(msg) ? "Nieprawidłowy klucz API" : msg);
+    }
+    const raw = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts
+      ? d.candidates[0].content.parts.map(p => p.text || "").join("") : "";
+    const json = JSON.parse(raw.replace(/^```(json)?|```$/g, "").trim());
+    pref("geminiModel", model);
+    return json;
+  }
+  throw lastErr || new Error("Brak modelu");
 }
-FIELDS.forEach(f => $(f).addEventListener("input", () => { autoFilled[f] = false; }));
 
-async function translate(text){
+/* ================= DARMOWY ZAPAS (gdy brak klucza Gemini) ================= */
+async function translateFree(text){
   try{
     const r = await fetch("https://api.mymemory.translated.net/get?langpair=en|pl&q=" + encodeURIComponent(text));
     const d = await r.json();
     const t = d && d.responseData && d.responseData.translatedText;
-    if(!t || /MYMEMORY WARNING|QUERY LENGTH/i.test(t)) return "";
-    return t;
+    return (!t || /MYMEMORY WARNING|QUERY LENGTH/i.test(t)) ? "" : t;
   }catch(e){ return ""; }
 }
-
+const dictCache = new Map();
 function dictLookup(word){
   word = word.toLowerCase();
   if(dictCache.has(word)) return dictCache.get(word);
@@ -243,8 +381,6 @@ function dictLookup(word){
   dictCache.set(word, p);
   return p;
 }
-
-/* IPA -> zapis „po polsku” */
 const IPA_MAP = [
   ["t͡ʃ","cz"],["tʃ","cz"],["d͡ʒ","dż"],["dʒ","dż"],
   ["eɪ","ej"],["aɪ","aj"],["ɔɪ","oj"],["aʊ","ał"],["əʊ","oł"],["oʊ","oł"],
@@ -259,77 +395,92 @@ function ipaToPl(ipa){
   for(const [a,b] of IPA_MAP) s = s.split(a).join(b);
   return s.toLowerCase();
 }
-
-const SMALL = {
-  "the":"de","a":"e","an":"en","i":"aj","you":"ju","he":"hi","she":"szi","it":"yt","we":"łi","they":"dej",
-  "is":"yz","are":"ar","was":"łoz","were":"łer","be":"bi","been":"bin","to":"tu","of":"ow","and":"end","in":"yn",
-  "on":"on","at":"et","for":"for","with":"łyf","my":"maj","your":"jor","his":"hyz","her":"her","our":"ałer",
-  "their":"der","this":"dys","that":"det","these":"diz","those":"dołz","have":"hew","has":"hez","had":"hed",
-  "do":"du","does":"daz","did":"dyd","not":"not","can":"ken","will":"łyl","would":"łud","could":"kud","should":"szud",
-  "me":"mi","him":"hym","us":"as","them":"dem","from":"from","by":"baj","as":"ez","but":"bat","or":"or","if":"yf",
-  "so":"soł","what":"łot","there":"der","no":"noł","yes":"jes","some":"sam","all":"ol","very":"weri",
-  "i'm":"ajm","it's":"yts","don't":"dołnt","can't":"kant","i've":"ajw","you're":"jur","that's":"dets","let's":"lets",
-  "he's":"hiz","she's":"sziz","they're":"der","we're":"łir","isn't":"yznt","doesn't":"daznt","didn't":"dydnt",
-  "won't":"łołnt","i'll":"ajl","you've":"juw","haven't":"hewnt","wasn't":"łoznt","they've":"dejw","we've":"łiw"
-};
-
+const SMALL = {"the":"de","a":"e","an":"en","i":"aj","you":"ju","he":"hi","she":"szi","it":"yt","we":"łi","they":"dej",
+  "is":"yz","are":"ar","was":"łoz","were":"łer","be":"bi","to":"tu","of":"ow","and":"end","in":"yn","on":"on","at":"et",
+  "for":"for","with":"łyf","my":"maj","your":"jor","his":"hyz","her":"her","this":"dys","that":"det","have":"hew",
+  "has":"hez","had":"hed","do":"du","did":"dyd","not":"not","can":"ken","will":"łyl","would":"łud","me":"mi","from":"from",
+  "i'm":"ajm","it's":"yts","don't":"dołnt","can't":"kant","i've":"ajw","you're":"jur","that's":"dets","let's":"lets"};
 async function wordPron(w){
   const lw = w.toLowerCase().replace(/’/g,"'");
   if(SMALL[lw]) return SMALL[lw];
   const hit = await dictLookup(lw);
   if(hit && hit.ipa) return ipaToPl(hit.ipa);
-  // odmiany: -s, -es, -ed, -ing
-  const tries = [];
-  if(/ies$/.test(lw)) tries.push([lw.slice(0,-3)+"y","s"]);
-  if(/es$/.test(lw)) tries.push([lw.slice(0,-2),"yz"]);
-  if(/s$/.test(lw)) tries.push([lw.slice(0,-1),"s"]);
-  if(/ied$/.test(lw)) tries.push([lw.slice(0,-3)+"y","d"]);
-  if(/ed$/.test(lw)){ tries.push([lw.slice(0,-2),"ED"]); tries.push([lw.slice(0,-1),"ED"]); tries.push([lw.slice(0,-3),"ED"]); }
-  if(/ing$/.test(lw)){ tries.push([lw.slice(0,-3),"ing"]); tries.push([lw.slice(0,-3)+"e","ing"]); tries.push([lw.slice(0,-4),"ing"]); }
-  for(const [stem, suf] of tries){
-    if(stem.length < 2) continue;
-    const h = await dictLookup(stem);
-    if(h && h.ipa){
-      const base = ipaToPl(h.ipa);
-      let s = suf;
-      if(suf === "ED") s = /[td]$/.test(base) ? "yd" : /(p|k|f|s|sz|cz)$/.test(base) ? "t" : "d";
-      return base + s;
-    }
+  for(const [re, cut, suf] of [[/s$/,1,"s"],[/ed$/,2,"d"],[/ing$/,3,"ing"]]){
+    if(re.test(lw)){ const h = await dictLookup(lw.slice(0,-cut)); if(h && h.ipa) return ipaToPl(h.ipa) + suf; }
   }
-  return lw;   // nie znaleziono — zostaw pisownię
+  return lw;
 }
-
-async function pronounce(text){
+async function pronounceFree(text){
   const parts = text.match(/[A-Za-z'’-]+|[^A-Za-z'’-]+/g) || [];
   const out = await Promise.all(parts.map(p => /[A-Za-z]/.test(p) ? wordPron(p) : Promise.resolve(p.replace(/[.!?"“”]/g,""))));
   return out.join("").replace(/\s+/g," ").trim();
 }
+async function freeFill(text){
+  const short = text.split(/\s+/).length <= 3;
+  const [pl, pron, info] = await Promise.all([translateFree(text), pronounceFree(text), short ? dictLookup(text) : null]);
+  const exEn = info && info.ex || "";
+  const exPl = exEn ? await translateFree(exEn) : "";
+  return { en:text, fixed:false, note:"", pl, pron, exEn, exPl };
+}
+
+/* ================= AUTOMATYCZNE UZUPEŁNIANIE ================= */
+const FIELDS = ["pl","pron","exEn","exPl"];
+let autoFilled = {}, autoSeq = 0, autoTimer = null, lastAutoText = "";
+
+function fillable(f){ return !$(f).value.trim() || autoFilled[f]; }
+function setAuto(f, val, force){ if(val && (force || fillable(f))){ $(f).value = val; autoFilled[f] = true; } }
+FIELDS.forEach(f => $(f).addEventListener("input", () => { autoFilled[f] = false; }));
+
+function idleStatus(){
+  if($("en").value.trim()) return;
+  $("autoStatus").innerHTML = pref("geminiKey")
+    ? "🤖 Wpisz coś — Gemini przetłumaczy, poprawi błędy i doda wymowę."
+    : `Reszta uzupełni się sama (wersja podstawowa). <button class="link" id="goSet">Dodaj klucz Gemini</button>, żeby było trafniej.`;
+  if($("goSet")) $("goSet").onclick = () => showTab("settings");
+}
 
 async function autoFill(force){
   const text = $("en").value.trim();
-  if(!text){ $("autoStatus").textContent = ""; return; }
+  if(!text){ $("fixBox").innerHTML = ""; idleStatus(); return; }
+  if(!force && text === lastAutoText) return;
   if(!force && !FIELDS.some(fillable)) return;
   const seq = ++autoSeq;
-  $("autoStatus").textContent = "⏳ Tłumaczę i szukam wymowy…";
-  const isPhrase = text.split(/\s+/).length <= 3;
-  const [tr, pron, info] = await Promise.all([
-    translate(text),
-    pronounce(text),
-    isPhrase ? dictLookup(text.replace(/[.!?]$/,"")) : Promise.resolve(null)
-  ]);
-  if(seq !== autoSeq) return;
-  setAuto("pl", tr, force);
-  setAuto("pron", pron, force);
-  if(info && info.ex && (force || fillable("exEn"))){
-    setAuto("exEn", info.ex, force);
-    const exTr = await translate(info.ex);
+  lastAutoText = text;
+  const useGemini = !!pref("geminiKey");
+  $("autoStatus").textContent = useGemini ? "🤖 Gemini myśli…" : "⏳ Tłumaczę…";
+  let r, via = "gemini";
+  try{
+    r = useGemini ? await gemini(text) : await freeFill(text);
+    if(!useGemini) via = "free";
+  }catch(e){
+    console.warn(e);
     if(seq !== autoSeq) return;
-    setAuto("exPl", exTr, force);
+    $("autoStatus").textContent = "⚠️ Gemini nie odpowiada (" + e.message.slice(0,60) + ") — używam wersji podstawowej…";
+    r = await freeFill(text); via = "free";
   }
-  $("autoStatus").textContent = tr ? "✓ Uzupełnione automatycznie — sprawdź i popraw, jeśli trzeba." : "Nie udało się połączyć z tłumaczem — wpisz ręcznie.";
+  if(seq !== autoSeq) return;
+
+  // korekta błędów
+  $("fixBox").innerHTML = "";
+  if(r.en && r.fixed && r.en.trim() !== text){
+    const original = text;
+    $("en").value = r.en.trim();
+    lastAutoText = r.en.trim();
+    $("fixBox").innerHTML = `<div class="fix">✏️ Poprawiłem na: <b>${esc(r.en)}</b>${r.note ? "<br>" + esc(r.note) : ""}
+      &nbsp;<button class="link" id="undoFix">Cofnij</button></div>`;
+    $("undoFix").onclick = () => { $("en").value = original; lastAutoText = original; $("fixBox").innerHTML = ""; };
+  }
+  setAuto("pl", r.pl, force);
+  setAuto("pron", r.pron, force);
+  setAuto("exEn", r.exEn, force);
+  setAuto("exPl", r.exPl, force);
+  $("autoStatus").textContent = via === "gemini"
+    ? "✓ Gotowe — sprawdź i zapisz."
+    : (r.pl ? "✓ Uzupełnione (wersja podstawowa) — sprawdź i zapisz." : "Nie udało się przetłumaczyć — wpisz ręcznie.");
 }
 
 $("en").addEventListener("input", () => {
+  autoSeq++;                       // anuluj trwające uzupełnianie
   clearTimeout(autoTimer);
   autoTimer = setTimeout(() => autoFill(false), 900);
 });
@@ -339,23 +490,29 @@ $("refill").onclick = () => { clearTimeout(autoTimer); autoFill(true); };
 /* ================= DODAJ / EDYTUJ ================= */
 function clearForm(){
   ["en", ...FIELDS].forEach(f => $(f).value = "");
-  autoFilled = {}; autoSeq++;
+  autoFilled = {}; autoSeq++; lastAutoText = "";
   editingId = null; $("save").textContent = "Zapisz"; $("cancel").style.display = "none";
-  $("autoStatus").textContent = "Reszta uzupełni się sama — możesz ją potem poprawić.";
+  $("fixBox").innerHTML = ""; idleStatus();
 }
-$("save").onclick = () => {
+$("save").onclick = async () => {
   const v = f => $(f).value.trim();
   const en = v("en");
   if(!en){ toast("Wpisz coś po angielsku"); $("en").focus(); return; }
   const data = { en, pl:v("pl"), pron:v("pron"), exEn:v("exEn"), exPl:v("exPl") };
-  if(editingId){
-    Object.assign(byId(editingId), data);
-    persist(); clearForm(); toast("Zmieniono"); showTab("list");
-  } else {
-    if(items.some(i => i.en.toLowerCase() === en.toLowerCase()) && !confirm("To już jest na liście. Dodać jeszcze raz?")) return;
-    items.unshift({ id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), ...data, known:false, added:new Date().toISOString() });
-    persist(); clearForm(); toast("Zapisano"); $("en").focus();
-  }
+  $("save").disabled = true;
+  try{
+    if(editingId){
+      await store.update(editingId, data);
+      clearForm(); toast("Zmieniono"); showTab("list");
+    } else {
+      if(items.some(i => i.en.toLowerCase() === en.toLowerCase()) && !confirm("To już jest na liście. Dodać jeszcze raz?")) return;
+      const it = { id:newId(), ...data, known:false, added:new Date().toISOString() };
+      const p = store.add(it);
+      clearForm(); toast("Zapisano"); $("en").focus();
+      await p;
+    }
+  }catch(e){ fail(e); }
+  finally{ $("save").disabled = false; }
 };
 $("cancel").onclick = () => { clearForm(); showTab("list"); };
 $("speakInput").onclick = () => speak($("en").value.trim());
@@ -377,7 +534,7 @@ function renderList(){
     (listFilter === "all" || (listFilter === "known") === !!i.known) &&
     (!q || [i.en,i.pl,i.pron,i.exEn,i.exPl].some(f => (f||"").toLowerCase().includes(q))));
   $("count").textContent = items.length ? `${shown.length} pozycji` : "";
-  if(!items.length){ $("list").innerHTML = '<div class="empty">Nic jeszcze nie ma — dodaj słówko w zakładce „Dodaj”</div>'; return; }
+  if(!items.length){ $("list").innerHTML = '<div class="empty">Nic jeszcze nie ma — dodaj słówko w zakładce „Dodaj” albo wczytaj plik w „Ustawieniach”</div>'; return; }
   if(!shown.length){ $("list").innerHTML = '<div class="empty">Brak wyników</div>'; return; }
   $("list").innerHTML = shown.map(i => `
     <div class="item ${i.known ? "known" : ""}">
@@ -398,45 +555,24 @@ function renderList(){
 $("list").onclick = e => {
   const b = e.target.closest("button"); if(!b) return;
   const d = b.dataset;
-  if(d.known){ const it = byId(d.known); it.known = !it.known; persist(); renderList(); }
+  if(d.known){ const it = byId(d.known); store.update(it.id, { known: !it.known }).catch(fail); }
   if(d.speak) speak(byId(d.speak).en);
   if(d.speakex) speak(byId(d.speakex).exEn);
   if(d.edit){
     const it = byId(d.edit);
     $("en").value = it.en; FIELDS.forEach(f => $(f).value = it[f] || "");
-    autoFilled = {}; editingId = it.id;
+    autoFilled = {}; editingId = it.id; lastAutoText = it.en; $("fixBox").innerHTML = "";
     $("save").textContent = "Zapisz zmiany"; $("cancel").style.display = "block";
-    $("autoStatus").textContent = "Edytujesz wpis. 🔄 uzupełni wszystko od nowa.";
     showTab("add");
+    $("autoStatus").textContent = "Edytujesz wpis. 🔄 uzupełni wszystko od nowa.";
   }
   if(d.del){
     const it = byId(d.del);
-    if(confirm(`Usunąć „${it.en}”?`)){ items = items.filter(i => i.id !== it.id); persist(); renderList(); }
+    if(confirm(`Usunąć „${it.en}”?`)) store.remove(it.id).catch(fail);
   }
 };
 
-$("export").onclick = () => {
-  const blob = new Blob([JSON.stringify(items, null, 1)], {type:"application/json"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `moj-angielski-${new Date().toISOString().slice(0,10)}.json`;
-  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-};
-$("importBtn").onclick = () => $("importFile").click();
-$("importFile").onchange = async e => {
-  const f = e.target.files[0]; if(!f) return;
-  try{
-    const data = JSON.parse(await f.text());
-    if(!Array.isArray(data)) throw 0;
-    const ids = new Set(items.map(i => i.id));
-    const fresh = data.filter(i => i && i.en && !ids.has(i.id));
-    items = [...fresh, ...items]; persist(); renderList();
-    toast(`Wczytano ${fresh.length}`);
-  }catch(_){ toast("Nieprawidłowy plik"); }
-  e.target.value = "";
-};
-
-/* ================= NAUKA (fiszki) ================= */
+/* ================= NAUKA ================= */
 let learnMode = "todo";
 let dir = pref("dir") || "en";
 let deck = [], pos = 0, revealed = false, round = {yes:0, no:0};
@@ -453,14 +589,12 @@ $("learnMode").onclick = e => {
   $("learnMode").querySelectorAll(".chip[data-m]").forEach(c => c.classList.toggle("on", c === b));
   startDeck();
 };
-
 function startDeck(){
   deck = items.filter(i => learnMode === "all" || !i.known).map(i => i.id);
   for(let i = deck.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [deck[i],deck[j]] = [deck[j],deck[i]]; }
   pos = 0; revealed = false; round = {yes:0, no:0};
   renderCard();
 }
-
 function renderCard(){
   const box = $("learn");
   if(!items.length){ box.innerHTML = '<div class="empty">Najpierw dodaj jakieś słówka 🙂</div>'; return; }
@@ -510,15 +644,69 @@ function renderCard(){
   }
 }
 function answer(it, known){
-  it.known = known; persist();
+  if(!!it.known !== known) store.update(it.id, { known }).catch(fail);
   known ? round.yes++ : round.no++;
   pos++; revealed = false; renderCard();
 }
 
-/* ---------- start ---------- */
+/* ================= USTAWIENIA ================= */
+$("gKey").value = pref("geminiKey") || "";
+$("gSave").onclick = async () => {
+  const k = $("gKey").value.trim();
+  pref("geminiKey", k || null); pref("geminiModel", null);
+  if(!k){ $("gStatus").textContent = "Klucz usunięty — działa wersja podstawowa."; return; }
+  $("gStatus").textContent = "⏳ Sprawdzam klucz…";
+  try{
+    const r = await gemini("recieve");
+    $("gStatus").innerHTML = `<span class="ok">✓ Działa!</span> Test: „recieve” → <b>${esc(r.en)}</b> [${esc(r.pron)}] – ${esc(r.pl)}`;
+  }catch(e){
+    $("gStatus").innerHTML = `<span class="bad">✗ Nie działa:</span> ${esc(e.message.slice(0,140))}`;
+  }
+};
+
+function renderSettings(){
+  if(cloud){
+    $("dbInfo").innerHTML = `Połączono z Firebase (<b>${esc(firebaseConfig.projectId)}</b>, kolekcja „${COLLECTION}”). Słówka są te same na każdym urządzeniu.`;
+    const local = readLocal();
+    $("migrateBox").innerHTML = local.length
+      ? `<button class="primary wide" id="migrate">Przenieś ${local.length} słówek z tego urządzenia do bazy</button>` : "";
+    if($("migrate")) $("migrate").onclick = async () => {
+      $("migrate").disabled = true; $("migrate").textContent = "Przenoszę…";
+      try{ await store.bulk(local); localStorage.removeItem(LOCAL_KEY); toast(`Przeniesiono ${local.length}`); renderSettings(); }
+      catch(e){ fail(e); $("migrate").disabled = false; $("migrate").textContent = "Spróbuj ponownie"; }
+    };
+  } else {
+    $("dbInfo").innerHTML = `Baza nie jest jeszcze podłączona — słówka zapisują się tylko na tym urządzeniu. Wklej <b>firebaseConfig</b> na górze pliku index.html.`;
+    $("migrateBox").innerHTML = "";
+  }
+}
+
+$("export").onclick = () => {
+  const blob = new Blob([JSON.stringify(items, null, 1)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `moj-angielski-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+$("importBtn").onclick = () => $("importFile").click();
+$("importFile").onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  try{
+    const data = JSON.parse(await f.text());
+    if(!Array.isArray(data)) throw 0;
+    const ids = new Set(items.map(i => i.id));
+    const fresh = data.filter(i => i && i.en && i.id && !ids.has(i.id));
+    toast("Wczytuję…");
+    await store.bulk(fresh);
+    toast(`Wczytano ${fresh.length}`);
+  }catch(err){ (!err || err instanceof SyntaxError) ? toast("Nieprawidłowy plik") : fail(err); }
+  e.target.value = "";
+};
+
+/* ================= START ================= */
 if("speechSynthesis" in window){ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => {}; }
-load(); updateStats();
-showTab(pref("tab") || (items.length ? "list" : "add"));
+startStorage();
+showTab(pref("tab") || "list");
 </script>
 </body>
 </html>
