@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mój angielski</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#2f5d50">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Angielski">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
   :root{
     --bg:#f6f4ef; --card:#ffffff; --text:#1d1d1f; --muted:#6b6b70;
@@ -24,7 +32,32 @@
   .wrap{max-width:640px;margin:0 auto;padding:18px 16px calc(96px + env(safe-area-inset-bottom))}
   header{margin-bottom:16px}
   .top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-  h1{font-size:1.5rem;margin:0}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand svg{width:40px;height:40px;flex:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.12))}
+  h1{font-size:1.45rem;margin:0;letter-spacing:-.01em}
+  h1 small{display:block;font-size:.72rem;font-weight:500;color:var(--muted);letter-spacing:.02em}
+
+  /* animacja startowa */
+  #splash{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+    transition:opacity .45s ease, visibility .45s}
+  #splash.out{opacity:0;visibility:hidden}
+  #splash svg{width:112px;height:112px;animation:logoIn .7s cubic-bezier(.2,1.4,.4,1) both}
+  #splash svg .bubble{transform-origin:30% 75%;animation:bubbleIn .55s .25s cubic-bezier(.2,1.5,.4,1) both}
+  #splash svg .dot{transform-box:fill-box;transform-origin:center;animation:dotPop .4s .7s cubic-bezier(.2,1.8,.4,1) both}
+  #splash .t{font-size:1.7rem;font-weight:800;letter-spacing:-.01em;display:flex}
+  #splash .t span{display:inline-block;animation:letterUp .45s cubic-bezier(.2,1.2,.4,1) both;white-space:pre}
+  #splash .s{color:var(--muted);font-size:.9rem;animation:fadeIn .5s 1.1s both}
+  @keyframes logoIn{from{transform:scale(.4) rotate(-12deg);opacity:0}to{transform:none;opacity:1}}
+  @keyframes bubbleIn{from{transform:scale(0)}to{transform:none}}
+  @keyframes dotPop{from{transform:scale(0)}to{transform:none}}
+  @keyframes letterUp{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @media (prefers-reduced-motion: reduce){ #splash, #splash *{animation:none !important} }
+
+  .sortRow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .sortRow .count{margin:0;flex:1}
+  select{font:inherit;font-size:.85rem;padding:7px 10px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text)}
+  .miss{font-size:.75rem;color:var(--danger);background:var(--danger-soft);border-radius:99px;padding:2px 8px;margin-left:6px;vertical-align:middle;font-weight:600}
   .db{font-size:.78rem;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:99px;padding:4px 10px;white-space:nowrap}
   .stats{display:flex;align-items:center;gap:10px;margin-top:6px;color:var(--muted);font-size:.9rem}
   .bar{flex:1;height:6px;border-radius:99px;background:var(--border);overflow:hidden}
@@ -93,9 +126,42 @@
 </style>
 </head>
 <body>
+<!-- wspólne logo -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3d8069"/><stop offset="1" stop-color="#22463c"/></linearGradient>
+    <symbol id="logo" viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="24" fill="url(#lg)"/>
+      <g class="bubble">
+        <rect x="20" y="24" width="60" height="42" rx="12" fill="#fff"/>
+        <path d="M30 62 L27 79 L45 64 Z" fill="#fff"/>
+        <text x="50" y="54" text-anchor="middle" font-family="Poppins,-apple-system,Segoe UI,Roboto,sans-serif" font-weight="800" font-size="24" fill="#2f5d50">EN</text>
+      </g>
+      <circle class="dot" cx="71" cy="25" r="6" fill="#f2b54a"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="splash" aria-hidden="true">
+  <svg viewBox="0 0 100 100">
+    <rect width="100" height="100" rx="24" fill="url(#lg)"/>
+    <g class="bubble">
+      <rect x="20" y="24" width="60" height="42" rx="12" fill="#fff"/>
+      <path d="M30 62 L27 79 L45 64 Z" fill="#fff"/>
+      <text x="50" y="54" text-anchor="middle" font-family="Poppins,-apple-system,Segoe UI,Roboto,sans-serif" font-weight="800" font-size="24" fill="#2f5d50">EN</text>
+    </g>
+    <circle class="dot" cx="71" cy="25" r="6" fill="#f2b54a"/>
+  </svg>
+  <div class="t" id="splashTitle"></div>
+  <div class="s">Słówka z życia 💬</div>
+</div>
+
 <div class="wrap">
   <header>
-    <div class="top"><h1>Mój angielski</h1><span class="db" id="dbBadge">…</span></div>
+    <div class="top">
+      <div class="brand"><svg aria-hidden="true"><use href="#logo"/></svg><h1>Mój angielski<small>słówka z życia</small></h1></div>
+      <span class="db" id="dbBadge">…</span>
+    </div>
     <div class="stats"><span id="statsText"></span><div class="bar"><div id="statsBar"></div></div></div>
   </header>
 
@@ -136,7 +202,15 @@
       <button class="chip" data-f="todo">Do nauki</button>
       <button class="chip" data-f="known">Znam ✓</button>
     </div>
-    <div class="count" id="count"></div>
+    <div class="sortRow">
+      <div class="count" id="count"></div>
+      <select id="sort" aria-label="Sortowanie">
+        <option value="new">Najnowsze</option>
+        <option value="old">Najstarsze</option>
+        <option value="hard">Najtrudniejsze</option>
+        <option value="az">A → Z</option>
+      </select>
+    </div>
     <div id="list"></div>
   </section>
 
@@ -144,6 +218,7 @@
   <section class="tab" id="tab-learn">
     <div class="chips" id="learnMode">
       <button class="chip on" data-m="todo">Do nauki</button>
+      <button class="chip" data-m="hard">Najtrudniejsze</button>
       <button class="chip" data-m="all">Wszystkie</button>
       <button class="chip" id="dirBtn" style="margin-left:auto">EN → PL</button>
     </div>
@@ -161,6 +236,11 @@
         <button class="small" id="gSave">Zapisz</button>
       </div>
       <div class="status" id="gStatus"></div>
+    </div>
+
+    <div class="card">
+      <h2>📲 Ikona na ekranie telefonu</h2>
+      <div id="installBox"></div>
     </div>
 
     <div class="card">
@@ -206,7 +286,7 @@ const COLLECTION = "slowka";
 /* ===================================================================== */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, writeBatch }
+import { getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, writeBatch, increment }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const LOCAL_KEY = "moj-angielski-v1";
@@ -228,6 +308,7 @@ let db = null, col = null;
 const store = {
   async add(it){ if(cloud) return setDoc(doc(col, it.id), clean(it)); items.unshift(it); saveLocal(); },
   async update(id, data){ if(cloud) return updateDoc(doc(col, id), data); Object.assign(byId(id), data); saveLocal(); },
+  async miss(id){ if(cloud) return updateDoc(doc(col, id), { miss: increment(1), known: false }); const it = byId(id); it.miss = (it.miss||0) + 1; it.known = false; saveLocal(); },
   async remove(id){ if(cloud) return deleteDoc(doc(col, id)); items = items.filter(i => i.id !== id); saveLocal(); },
   async bulk(list){
     if(cloud){
@@ -244,7 +325,7 @@ const store = {
 };
 function clean(it){
   return { en:it.en||"", pl:it.pl||"", pron:it.pron||"", exEn:it.exEn||"", exPl:it.exPl||"",
-           known:!!it.known, added:it.added || new Date().toISOString() };
+           known:!!it.known, miss:it.miss||0, added:it.added || new Date().toISOString() };
 }
 function saveLocal(){ try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(items)); }catch(e){ toast("Nie udało się zapisać"); } dataChanged(); }
 function fail(e){ console.error(e); toast(/permission/i.test(e && e.message) ? "Baza odmówiła dostępu (reguły Firestore)" : "Błąd zapisu w bazie"); }
@@ -527,18 +608,26 @@ $("listFilter").onclick = e => {
   renderList();
 };
 $("search").oninput = renderList;
+$("sort").value = pref("sort") || "new";
+$("sort").onchange = () => { pref("sort", $("sort").value); renderList(); };
 
 function renderList(){
   const q = $("search").value.trim().toLowerCase();
   const shown = items.filter(i =>
     (listFilter === "all" || (listFilter === "known") === !!i.known) &&
     (!q || [i.en,i.pl,i.pron,i.exEn,i.exPl].some(f => (f||"").toLowerCase().includes(q))));
+  const s = $("sort").value;
+  const byNew = (a,b) => (b.added||"").localeCompare(a.added||"") || b.id.localeCompare(a.id);
+  if(s === "new") shown.sort(byNew);
+  if(s === "old") shown.sort((a,b) => -byNew(a,b));
+  if(s === "hard") shown.sort((a,b) => (b.miss||0) - (a.miss||0) || (!!a.known - !!b.known) || byNew(a,b));
+  if(s === "az") shown.sort((a,b) => a.en.localeCompare(b.en, "en", {sensitivity:"base"}));
   $("count").textContent = items.length ? `${shown.length} pozycji` : "";
   if(!items.length){ $("list").innerHTML = '<div class="empty">Nic jeszcze nie ma — dodaj słówko w zakładce „Dodaj” albo wczytaj plik w „Ustawieniach”</div>'; return; }
   if(!shown.length){ $("list").innerHTML = '<div class="empty">Brak wyników</div>'; return; }
   $("list").innerHTML = shown.map(i => `
     <div class="item ${i.known ? "known" : ""}">
-      <div class="en">${esc(i.en)}</div>
+      <div class="en">${esc(i.en)}${i.miss ? `<span class="miss" title="Ile razy nie wiedziałeś">✗ ${i.miss}</span>` : ""}</div>
       ${i.pl ? `<div class="pl">${esc(i.pl)}</div>` : ""}
       ${i.pron ? `<div class="pron">${esc(i.pron)}</div>` : ""}
       ${i.exEn ? `<div class="ex"><div>${esc(i.exEn)}</div>${i.exPl ? `<div class="exPl">${esc(i.exPl)}</div>` : ""}</div>` : ""}
@@ -590,7 +679,11 @@ $("learnMode").onclick = e => {
   startDeck();
 };
 function startDeck(){
-  deck = items.filter(i => learnMode === "all" || !i.known).map(i => i.id);
+  if(learnMode === "hard"){
+    deck = items.filter(i => i.miss > 0).sort((a,b) => b.miss - a.miss).slice(0, 20).map(i => i.id);
+  } else {
+    deck = items.filter(i => learnMode === "all" || !i.known).map(i => i.id);
+  }
   for(let i = deck.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [deck[i],deck[j]] = [deck[j],deck[i]]; }
   pos = 0; revealed = false; round = {yes:0, no:0};
   renderCard();
@@ -598,6 +691,10 @@ function startDeck(){
 function renderCard(){
   const box = $("learn");
   if(!items.length){ box.innerHTML = '<div class="empty">Najpierw dodaj jakieś słówka 🙂</div>'; return; }
+  if(!deck.length && learnMode === "hard"){
+    box.innerHTML = `<div class="card empty">Nie ma jeszcze trudnych słówek.<br>Pojawią się tu te, przy których klikniesz „❌ Nie znam”.</div>`;
+    return;
+  }
   if(!deck.length){
     box.innerHTML = `<div class="card empty">🎉 Znasz wszystkie słówka!<br><br><button class="primary" id="allBtn">Powtórz wszystkie</button></div>`;
     $("allBtn").onclick = () => $("learnMode").querySelector('[data-m="all"]').click();
@@ -644,7 +741,8 @@ function renderCard(){
   }
 }
 function answer(it, known){
-  if(!!it.known !== known) store.update(it.id, { known }).catch(fail);
+  if(!known) store.miss(it.id).catch(fail);
+  else if(!it.known) store.update(it.id, { known:true }).catch(fail);
   known ? round.yes++ : round.no++;
   pos++; revealed = false; renderCard();
 }
@@ -665,6 +763,7 @@ $("gSave").onclick = async () => {
 };
 
 function renderSettings(){
+  renderInstall();
   if(cloud){
     $("dbInfo").innerHTML = `Połączono z Firebase (<b>${esc(firebaseConfig.projectId)}</b>, kolekcja „${COLLECTION}”). Słówka są te same na każdym urządzeniu.`;
     const local = readLocal();
@@ -703,7 +802,43 @@ $("importFile").onchange = async e => {
   e.target.value = "";
 };
 
+/* ================= INSTALACJA NA TELEFONIE ================= */
+let installEvt = null;
+const isStandalone = () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; renderInstall(); });
+window.addEventListener("appinstalled", () => { installEvt = null; toast("Dodano do ekranu 🎉"); renderInstall(); });
+
+function renderInstall(){
+  const box = $("installBox");
+  if(isStandalone()){
+    box.innerHTML = `<p class="ok">✓ Aplikacja jest już na ekranie telefonu.</p>`;
+  } else if(installEvt){
+    box.innerHTML = `<p>Dodaj „Mój angielski” jako aplikację z ikoną — otworzy się na pełnym ekranie, bez paska przeglądarki.</p>
+      <button class="primary wide" id="installBtn">📲 Dodaj do ekranu</button>`;
+    $("installBtn").onclick = async () => { installEvt.prompt(); await installEvt.userChoice.catch(()=>{}); installEvt = null; renderInstall(); };
+  } else if(isIOS){
+    box.innerHTML = `<p><b>iPhone (Safari):</b> stuknij przycisk udostępniania <b>⬆︎</b> na dole ekranu → <b>Do ekranu początkowego</b> → <b>Dodaj</b>.</p>
+      <p>Musi to być Safari — w Chrome na iPhonie ta opcja bywa schowana w ⋯ → „Dodaj do ekranu początkowego”.</p>`;
+  } else {
+    box.innerHTML = `<p><b>Android (Chrome):</b> stuknij <b>⋮</b> w prawym górnym rogu → <b>Dodaj do ekranu głównego</b> albo <b>Zainstaluj aplikację</b>.</p>`;
+  }
+}
+
+/* ================= ANIMACJA STARTOWA ================= */
+function runSplash(){
+  const sp = $("splash");
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  $("splashTitle").innerHTML = Array.from("Mój angielski").map((c, i) =>
+    `<span style="animation-delay:${(0.45 + i*0.045).toFixed(3)}s">${c === " " ? "&nbsp;" : esc(c)}</span>`).join("");
+  const hide = () => { sp.classList.add("out"); setTimeout(() => sp.remove(), 500); };
+  sp.addEventListener("click", hide);
+  setTimeout(hide, reduce ? 400 : 1800);
+}
+
 /* ================= START ================= */
+runSplash();
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 if("speechSynthesis" in window){ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => {}; }
 startStorage();
 showTab(pref("tab") || "list");
