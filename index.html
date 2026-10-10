@@ -498,38 +498,79 @@ Zwróć WYŁĄCZNIE obiekt JSON z polami:
 - "exPl": tłumaczenie exEn na polski albo "".
 Wpis: `;
 
-function gemini(text){ return geminiJSON(PROMPT + text, 0.2); }
+/* Schematy odpowiedzi — Gemini musi odpowiedzieć dokładnie w tym kształcie (koniec z zepsutym JSON-em) */
+const T = {
+  s: { type:"STRING" }, b: { type:"BOOLEAN" }, i: { type:"INTEGER" },
+  arr: (items) => ({ type:"ARRAY", items }),
+  obj: (props, req) => ({ type:"OBJECT", properties: props, required: req || Object.keys(props) })
+};
+const SCHEMA_ADD = T.obj({ en:T.s, fixed:T.b, note:T.s, pl:T.s, pron:T.s, exEn:T.s, exPl:T.s });
+const SCHEMA_MORE = T.obj({
+  znaczenia: T.arr(T.obj({ pl:T.s, kiedy:T.s })), rejestr:T.s, ciekawostka:T.s,
+  przyklady: T.arr(T.obj({ en:T.s, pl:T.s, pron:T.s })),
+  kolokacje: T.arr(T.s), synonimy: T.arr(T.s), przeciwienstwa: T.arr(T.s), uwaga:T.s
+});
+const SCHEMA_GRAM = T.obj({
+  wyjasnienie:T.s, wzory: T.arr(T.obj({ en:T.s, pl:T.s })), uwaga:T.s,
+  cwiczenia: T.arr(T.obj({
+    typ: { type:"STRING", enum:["wybor","wpisz"] }, zdanie:T.s, opcje:T.arr(T.s), poprawna:T.i,
+    podpowiedz:T.s, odpowiedzi:T.arr(T.s), dlaczego:T.s
+  }, ["typ","zdanie","dlaczego"]))
+});
+const SCHEMA_APPEAL = T.obj({ poprawna:T.b, komentarz:T.s });
 
-async function geminiJSON(prompt, temperature){
+function gemini(text){ return geminiJSON(PROMPT + text, 0.2, SCHEMA_ADD); }
+
+/* awaryjna naprawa typowych usterek JSON-a */
+function parseLoose(raw){
+  let s = String(raw || "").replace(/^\s*```(?:json)?/i, "").replace(/```\s*$/, "").trim();
+  const a = s.indexOf("{"), b = s.lastIndexOf("}");
+  if(a >= 0 && b > a) s = s.slice(a, b + 1);
+  try{ return JSON.parse(s); }catch(e){}
+  const fixed = s
+    .replace(/,\s*([}\]])/g, "$1")                       // przecinek przed ] lub }
+    .replace(/([}\]"]|\d|true|false|null)\s*\n(\s*)([{\["])/g, "$1,\n$2$3")   // brakujący przecinek między liniami
+    .replace(/}\s*{/g, "},{");                           // brakujący przecinek między obiektami
+  return JSON.parse(fixed);
+}
+
+async function geminiJSON(prompt, temperature, schema){
   const key = pref("geminiKey");
   if(!key) throw new Error("NOKEY");
   const order = [pref("geminiModel"), ...MODELS].filter((m,i,a) => m && a.indexOf(m) === i);
   let lastErr;
   for(const model of order){
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json", temperature: temperature ?? 0.2 }
-      })
-    });
-    const d = await r.json().catch(() => ({}));
-    const msg = (d.error && d.error.message) || ("HTTP " + r.status);
-    if(!r.ok){
-      // model niedostępny / bez darmowego limitu – próbuj następnego
-      if((r.status === 404 || r.status === 429 || (r.status === 400 && /model/i.test(msg))) && !/api key/i.test(msg)){
-        lastErr = new Error(msg); continue;
+    for(let attempt = 0; attempt < 2; attempt++){
+      const cfg = { responseMimeType: "application/json", temperature: temperature ?? 0.2, maxOutputTokens: 8192 };
+      if(schema && !geminiJSON.noSchema) cfg.responseSchema = schema;
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: cfg })
+      });
+      const d = await r.json().catch(() => ({}));
+      const msg = (d.error && d.error.message) || ("HTTP " + r.status);
+      if(!r.ok){
+        if(/api key/i.test(msg)) throw new Error("Nieprawidłowy klucz API");
+        // model nie obsługuje schematu – wyłącz schemat i spróbuj jeszcze raz
+        if(r.status === 400 && /schema/i.test(msg) && !geminiJSON.noSchema){ geminiJSON.noSchema = true; attempt--; continue; }
+        // model niedostępny / bez darmowego limitu – próbuj następnego
+        if(r.status === 404 || r.status === 429 || r.status === 503 || (r.status === 400 && /model/i.test(msg))){ lastErr = new Error(msg); break; }
+        throw new Error(msg);
       }
-      throw new Error(/api key/i.test(msg) ? "Nieprawidłowy klucz API" : msg);
+      const c = d.candidates && d.candidates[0];
+      const raw = c && c.content && c.content.parts ? c.content.parts.map(p => p.text || "").join("") : "";
+      try{
+        const json = parseLoose(raw);
+        pref("geminiModel", model);
+        return json;
+      }catch(e){
+        // zepsuta albo ucięta odpowiedź — jeszcze jedna próba, potem następny model
+        lastErr = new Error(c && c.finishReason === "MAX_TOKENS" ? "Odpowiedź Gemini była za długa i się ucięła" : "Gemini odpowiedział w złym formacie");
+      }
     }
-    const raw = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts
-      ? d.candidates[0].content.parts.map(p => p.text || "").join("") : "";
-    const json = JSON.parse(raw.replace(/^```(json)?|```$/g, "").trim());
-    pref("geminiModel", model);
-    return json;
   }
-  throw lastErr || new Error("Brak modelu");
+  throw new Error((lastErr ? lastErr.message : "Brak modelu") + " — spróbuj jeszcze raz.");
 }
 
 /* ================= DARMOWY ZAPAS (gdy brak klucza Gemini) ================= */
@@ -934,7 +975,7 @@ function openMore(id, force){
     return;
   }
   $("sheetBody").innerHTML = `<div class="loading"><div class="spin"></div>Gemini szuka ciekawostek…</div>`;
-  geminiJSON(MORE_PROMPT(it), 0.6).then(m => {
+  geminiJSON(MORE_PROMPT(it), 0.6, SCHEMA_MORE).then(m => {
     if(moreId !== id) return;
     store.update(id, { more: m }).catch(() => {});
     renderMore(it, m);
@@ -1111,7 +1152,7 @@ async function loadQuiz(prompt, meta){
   quiz = { ...meta, loading: true };
   renderQuiz();
   try{
-    const r = await geminiJSON(prompt, 0.8);
+    const r = await geminiJSON(prompt, 0.8, SCHEMA_GRAM);
     const ex = (r.cwiczenia || []).filter(x => x && x.zdanie && (x.typ === "wpisz" ? (x.odpowiedzi||[]).length : (x.opcje||[]).length > 1));
     if(!ex.length) throw new Error("Gemini nie przysłał ćwiczeń — spróbuj jeszcze raz");
     if(meta.unit && r.wyjasnienie) saveGram(meta.unit, { expl: { wyjasnienie: r.wyjasnienie, wzory: r.wzory || [], uwaga: r.uwaga || "" } }).catch(() => {});
@@ -1221,7 +1262,7 @@ function renderQuiz(){
         $("qAppeal").outerHTML = `<div class="small muted" id="qAppealRes" style="margin-top:6px">⏳ Pytam Gemini…</div>`;
         try{
           const r = await geminiJSON(`Uczeń uzupełniał lukę w zdaniu: "${x.zdanie}". Wpisał: "${q.given[q.i]}" (pełne zdanie: "${full}"). Oczekiwane odpowiedzi: ${JSON.stringify(x.odpowiedzi)}.
-Czy jego odpowiedź jest gramatycznie poprawna i naturalna w tym zdaniu? Zwróć WYŁĄCZNIE JSON: {"poprawna":true/false,"komentarz":"1–2 zdania po polsku"}`, 0.1);
+Czy jego odpowiedź jest gramatycznie poprawna i naturalna w tym zdaniu? Zwróć WYŁĄCZNIE JSON: {"poprawna":true/false,"komentarz":"1–2 zdania po polsku"}`, 0.1, SCHEMA_APPEAL);
           if(r.poprawna){ q.res[q.i] = true; x.odpowiedzi.push(q.given[q.i]); x.dlaczego = (x.dlaczego ? x.dlaczego + " " : "") + "(Twoja wersja też jest OK: " + (r.komentarz||"") + ")"; renderQuiz(); }
           else $("qAppealRes").textContent = "❌ " + (r.komentarz || "Niestety nie.");
         }catch(e){ $("qAppealRes").textContent = "Nie udało się sprawdzić: " + e.message.slice(0,80); }
