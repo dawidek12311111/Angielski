@@ -112,7 +112,7 @@
   .yes{background:var(--good-soft);color:var(--good)}
 
   .muted{color:var(--muted)} .small{font-size:.85rem}
-  .pron.small{font-size:.82rem;margin-top:2px}
+
 
   /* nawigacja w nauce */
   .navRow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
@@ -183,6 +183,32 @@
   .verdict.badBox{background:var(--danger-soft)}
   .big{font-size:2.4rem}
 
+  /* testy */
+  .gear{width:36px;height:36px;padding:0;border-radius:50%;background:var(--card);border:1px solid var(--border);font-size:1.05rem}
+  .gear.on{background:var(--accent);border-color:var(--accent)}
+  .seg{flex-wrap:nowrap;overflow-x:auto;margin-top:0;padding-bottom:4px;scrollbar-width:none}
+  .seg::-webkit-scrollbar{display:none}
+  .seg .chip{white-space:nowrap;flex:none}
+  .seg em{font-style:normal;font-size:.75rem;opacity:.75;margin-left:2px}
+  .form label{margin-top:16px}
+  .pick .chip{display:flex;flex-direction:column;align-items:center;line-height:1.2}
+  .pick .chip small{font-size:.68rem;opacity:.8;font-weight:500}
+  .pill{display:inline-block;font-size:.75rem;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent);margin-right:6px}
+  .pGood{background:var(--good-soft);color:var(--good)} .pMid{background:var(--warn-soft);color:var(--warn)} .pBad{background:var(--danger-soft);color:var(--danger)}
+  .dots{display:inline-flex;gap:4px} .dots i{width:9px;height:9px;border-radius:50%;background:var(--border)} .dots i.on{background:var(--good)}
+  .statRow{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;gap:8px}
+  .statRow b{display:block;font-size:1.35rem} .statRow span{font-size:.78rem;color:var(--muted)}
+  .spark{display:flex;align-items:flex-end;gap:3px;height:64px;margin:14px 0 4px}
+  .spark i{flex:1;border-radius:4px 4px 0 0;min-width:4px}
+  .spark i.pGood{background:var(--good)} .spark i.pMid{background:var(--warn)} .spark i.pBad{background:var(--danger)}
+  .histRow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+  .secH{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:18px 0 8px}
+  .chk{display:flex;align-items:center;gap:10px;margin:0;text-transform:none;letter-spacing:0;font-size:.9rem;color:var(--text);font-weight:500}
+  .chk input{width:22px;height:22px;flex:none;accent-color:var(--accent)}
+  .item.scr{border-left-color:var(--border)} .item.scr.picked{border-left-color:var(--accent)}
+  .stickyBar{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));padding:10px 0;background:linear-gradient(transparent, var(--bg) 30%)}
+  .opt b{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--accent-soft);color:var(--accent);font-size:.75rem;margin-right:6px}
+
   nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--border);
     display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom);z-index:5}
   nav .in{display:flex;max-width:640px;width:100%}
@@ -232,7 +258,7 @@
   <header>
     <div class="top">
       <div class="brand"><svg aria-hidden="true"><use href="#logo"/></svg><h1>Mój angielski<small>słówka z życia</small></h1></div>
-      <span class="db" id="dbBadge">…</span>
+      <div class="row" style="gap:6px"><span class="db" id="dbBadge">…</span><button class="gear" id="gearBtn" aria-label="Ustawienia">⚙️</button></div>
     </div>
     <div class="stats"><span id="statsText"></span><div class="bar"><div id="statsBar"></div></div></div>
   </header>
@@ -302,17 +328,36 @@
     <div id="grammarBox"></div>
   </section>
 
+  <!-- TESTY -->
+  <section class="tab" id="tab-tests">
+    <div id="testsBox"></div>
+  </section>
+
   <!-- USTAWIENIA -->
   <section class="tab" id="tab-settings">
     <div class="card">
-      <h2>🤖 Gemini (tłumaczenie i poprawki)</h2>
-      <p>Klucz z Google AI Studio. Zapisuje się tylko w tej przeglądarce — nie trafia do GitHuba ani do bazy.</p>
-      <label for="gKey">Klucz API</label>
+      <h2>🤖 Sztuczna inteligencja</h2>
+      <p>Klucze zapisują się tylko w tej przeglądarce — nie trafiają do GitHuba ani do bazy.</p>
+      <label for="aiEngine">Silnik</label>
+      <select id="aiEngine" style="width:100%;padding:10px 12px">
+        <option value="auto">Auto — darmowe Gemini, a gdy limit się skończy: ChatGPT</option>
+        <option value="gemini">Tylko Gemini (darmowe)</option>
+        <option value="openai">Tylko ChatGPT (płatne, OpenAI)</option>
+      </select>
+
+      <label for="gKey">Klucz Gemini (Google AI Studio)</label>
       <div class="row">
         <input id="gKey" type="password" placeholder="AIza…" autocomplete="off">
         <button class="small" id="gSave">Zapisz</button>
       </div>
       <div class="status" id="gStatus"></div>
+
+      <label for="oKey">Klucz OpenAI (ChatGPT) — opcjonalnie</label>
+      <div class="row">
+        <input id="oKey" type="password" placeholder="sk-…" autocomplete="off">
+        <button class="small" id="oSave">Zapisz</button>
+      </div>
+      <div class="status" id="oStatus"></div>
     </div>
 
     <div class="card">
@@ -343,7 +388,7 @@
   <button data-tab="list"><span>📚</span>Lista</button>
   <button data-tab="learn"><span>🎯</span>Nauka</button>
   <button data-tab="grammar"><span>📖</span>Gramatyka</button>
-  <button data-tab="settings"><span>⚙️</span>Ustawienia</button>
+  <button data-tab="tests"><span>📝</span>Testy</button>
 </div></nav>
 <div class="toast" id="toast"></div>
 
@@ -436,6 +481,9 @@ function startStorage(){
     col = collection(db, COLLECTION);
     $("dbBadge").textContent = "☁️ łączę…";
     onSnapshot(col, snap => {
+      xdocs = {};
+      snap.docs.forEach(d => { if(d.id.startsWith("_") && d.id !== "_gramatyka") xdocs[d.id] = d.data(); });
+      extraChanged();
       const g = snap.docs.find(d => d.id === "_gramatyka");
       gram = g ? g.data() : {};
       if(!quiz && $("tab-grammar").classList.contains("on")) renderGrammar();
@@ -447,6 +495,7 @@ function startStorage(){
   } else {
     items = readLocal();
     try{ gram = JSON.parse(localStorage.getItem("moj-angielski-gram")) || {}; }catch(e){ gram = {}; }
+    try{ xdocs = JSON.parse(localStorage.getItem("moj-angielski-x")) || {}; }catch(e){ xdocs = {}; }
     $("dbBadge").textContent = "📱 lokalnie";
     dataChanged();
   }
@@ -475,14 +524,18 @@ function showTab(name){
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.id === "tab-"+name));
   document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === name));
   pref("tab", name);
+  if(name !== "settings") pref("lastTab", name);
   if(name === "list") renderList();
   if(name === "learn") startDeck();
   if(name === "settings") renderSettings();
   if(name === "grammar") renderGrammar();
+  if(name === "tests") renderTests();
+  $("gearBtn").classList.toggle("on", name === "settings");
   if(name === "add") idleStatus();
   window.scrollTo(0,0);
 }
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+$("gearBtn").onclick = () => showTab($("tab-settings").classList.contains("on") ? (pref("lastTab") || "list") : "settings");
 
 /* ================= GEMINI ================= */
 const MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash"];
@@ -519,7 +572,7 @@ const SCHEMA_GRAM = T.obj({
 });
 const SCHEMA_APPEAL = T.obj({ poprawna:T.b, komentarz:T.s });
 
-function gemini(text){ return geminiJSON(PROMPT + text, 0.2, SCHEMA_ADD); }
+function gemini(text){ return aiJSON(PROMPT + text, 0.2, SCHEMA_ADD); }
 
 /* awaryjna naprawa typowych usterek JSON-a */
 function parseLoose(raw){
@@ -534,7 +587,7 @@ function parseLoose(raw){
   return JSON.parse(fixed);
 }
 
-async function geminiJSON(prompt, temperature, schema){
+async function geminiJSON(prompt, temperature, schema, images){
   const key = pref("geminiKey");
   if(!key) throw new Error("NOKEY");
   const order = [pref("geminiModel"), ...MODELS].filter((m,i,a) => m && a.indexOf(m) === i);
@@ -546,7 +599,7 @@ async function geminiJSON(prompt, temperature, schema){
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: cfg })
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, ...(images || []).map(im => ({ inline_data: { mime_type: im.mime, data: im.b64 } }))] }], generationConfig: cfg })
       });
       const d = await r.json().catch(() => ({}));
       const msg = (d.error && d.error.message) || ("HTTP " + r.status);
@@ -555,7 +608,7 @@ async function geminiJSON(prompt, temperature, schema){
         // model nie obsługuje schematu – wyłącz schemat i spróbuj jeszcze raz
         if(r.status === 400 && /schema/i.test(msg) && !geminiJSON.noSchema){ geminiJSON.noSchema = true; attempt--; continue; }
         // model niedostępny / bez darmowego limitu – próbuj następnego
-        if(r.status === 404 || r.status === 429 || r.status === 503 || (r.status === 400 && /model/i.test(msg))){ lastErr = new Error(msg); break; }
+        if(r.status === 404 || r.status === 429 || r.status === 503 || (r.status === 400 && /model/i.test(msg))){ lastErr = new Error(r.status === 429 ? "Skończył się dzienny limit Gemini" : msg); lastErr.quota = r.status === 429; break; }
         throw new Error(msg);
       }
       const c = d.candidates && d.candidates[0];
@@ -570,7 +623,70 @@ async function geminiJSON(prompt, temperature, schema){
       }
     }
   }
-  throw new Error((lastErr ? lastErr.message : "Brak modelu") + " — spróbuj jeszcze raz.");
+  const err = new Error((lastErr ? lastErr.message : "Brak modelu") + " — spróbuj jeszcze raz.");
+  err.quota = !!(lastErr && lastErr.quota);
+  throw err;
+}
+
+/* ================= OPENAI (ChatGPT) ================= */
+const OPENAI_MODELS = ["gpt-6-luna", "gpt-5.6-luna", "gpt-5.4-nano", "gpt-5-nano", "gpt-4.1-mini", "gpt-4o-mini"];
+async function openaiJSON(prompt, images){
+  const key = pref("openaiKey");
+  if(!key) throw new Error("NOKEY");
+  const order = [pref("openaiModel"), ...OPENAI_MODELS].filter((m,i,a) => m && a.indexOf(m) === i);
+  let lastErr;
+  for(const model of order){
+    const body = {
+      model,
+      messages: [{ role: "user", content: [
+        { type: "text", text: prompt + "\n\nOdpowiedz wyłącznie poprawnym obiektem JSON." },
+        ...(images || []).map(im => ({ type: "image_url", image_url: { url: `data:${im.mime};base64,${im.b64}` } }))
+      ] }],
+      response_format: { type: "json_object" },
+      reasoning_effort: "none"
+    };
+    for(let attempt = 0; attempt < 4; attempt++){
+      const r = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
+        body: JSON.stringify(body)
+      });
+      const d = await r.json().catch(() => ({}));
+      const msg = (d.error && d.error.message) || ("HTTP " + r.status);
+      const code = (d.error && (d.error.code || d.error.type)) || "";
+      if(!r.ok){
+        if(r.status === 401) throw new Error("Nieprawidłowy klucz OpenAI");
+        if(code === "insufficient_quota" || /quota|billing/i.test(msg)){ const e = new Error("Brak środków na koncie OpenAI"); e.quota = true; throw e; }
+        // model nie zna parametru – usuń go i spróbuj jeszcze raz
+        if(r.status === 400 && /reasoning/i.test(msg) && body.reasoning_effort){ delete body.reasoning_effort; continue; }
+        if(r.status === 400 && /reasoning_effort/i.test(msg)){ delete body.reasoning_effort; continue; }
+        if(r.status === 400 && /response_format|json/i.test(msg) && body.response_format){ delete body.response_format; continue; }
+        if(r.status === 404 || code === "model_not_found" || /model/i.test(msg)){ lastErr = new Error(msg); break; }
+        if(r.status === 429){ await new Promise(s => setTimeout(s, 1500)); lastErr = new Error("OpenAI: za dużo zapytań naraz"); continue; }
+        throw new Error("OpenAI: " + msg);
+      }
+      const raw = d.choices && d.choices[0] && d.choices[0].message ? d.choices[0].message.content || "" : "";
+      try{ const json = parseLoose(raw); pref("openaiModel", model); return json; }
+      catch(e){ lastErr = new Error("ChatGPT odpowiedział w złym formacie"); }
+    }
+  }
+  throw new Error((lastErr ? lastErr.message : "Brak modelu OpenAI") + " — spróbuj jeszcze raz.");
+}
+
+/* ================= WYBÓR SILNIKA AI ================= */
+function hasAI(){ return !!(pref("geminiKey") || pref("openaiKey")); }
+function aiEngine(){ return pref("aiEngine") || "auto"; }
+async function aiJSON(prompt, temperature, schema, images){
+  const g = !!pref("geminiKey"), o = !!pref("openaiKey"), eng = aiEngine();
+  if(eng === "openai" && o) return openaiJSON(prompt, images);
+  if(eng === "gemini" && g) return geminiJSON(prompt, temperature, schema, images);
+  // auto: najpierw darmowe Gemini, a gdy nie da rady — ChatGPT
+  if(g){
+    try{ return await geminiJSON(prompt, temperature, schema, images); }
+    catch(e){ if(o && e.message !== "Nieprawidłowy klucz API"){ toast(e.quota ? "Limit Gemini — używam ChatGPT" : "Gemini nie odpowiada — używam ChatGPT"); return openaiJSON(prompt, images); } throw e; }
+  }
+  if(o) return openaiJSON(prompt, images);
+  throw new Error("NOKEY");
 }
 
 /* ================= DARMOWY ZAPAS (gdy brak klucza Gemini) ================= */
@@ -654,7 +770,7 @@ FIELDS.forEach(f => $(f).addEventListener("input", () => { autoFilled[f] = false
 
 function idleStatus(){
   if($("en").value.trim()) return;
-  $("autoStatus").innerHTML = pref("geminiKey")
+  $("autoStatus").innerHTML = hasAI()
     ? "🤖 Wpisz coś — Gemini przetłumaczy, poprawi błędy i doda wymowę."
     : `Reszta uzupełni się sama (wersja podstawowa). <button class="link" id="goSet">Dodaj klucz Gemini</button>, żeby było trafniej.`;
   if($("goSet")) $("goSet").onclick = () => showTab("settings");
@@ -667,7 +783,7 @@ async function autoFill(force){
   if(!force && !FIELDS.some(fillable)) return;
   const seq = ++autoSeq;
   lastAutoText = text;
-  const useGemini = !!pref("geminiKey");
+  const useGemini = hasAI();
   $("autoStatus").textContent = useGemini ? "🤖 Gemini myśli…" : "⏳ Tłumaczę…";
   let r, via = "gemini";
   try{
@@ -968,14 +1084,14 @@ function openMore(id, force){
   $("sheet").hidden = false; document.body.style.overflow = "hidden";
   requestAnimationFrame(() => $("sheet").classList.add("open"));
   if(it.more && !force){ renderMore(it, it.more); return; }
-  if(!pref("geminiKey")){
+  if(!hasAI()){
     $("sheetBody").innerHTML = `<p class="muted">Ciekawostki i przykłady pisze Gemini — dodaj klucz w <button class="link" id="moreSet">Ustawieniach</button>.</p>
       <h3>Sprawdź w internecie</h3>${webLinks(it.en)}`;
     $("moreSet").onclick = () => { closeMore(); showTab("settings"); };
     return;
   }
   $("sheetBody").innerHTML = `<div class="loading"><div class="spin"></div>Gemini szuka ciekawostek…</div>`;
-  geminiJSON(MORE_PROMPT(it), 0.6, SCHEMA_MORE).then(m => {
+  aiJSON(MORE_PROMPT(it), 0.6, SCHEMA_MORE).then(m => {
     if(moreId !== id) return;
     store.update(id, { more: m }).catch(() => {});
     renderMore(it, m);
@@ -1085,7 +1201,7 @@ function renderGrammar(){
         <button class="small" id="gRandom" style="flex:1">🎲 Losowy unit</button>
         <button class="small" id="gMix" style="flex:1" ${done ? "" : "disabled"}>🔁 Powtórka z zaliczonych</button>
       </div>
-      ${pref("geminiKey") ? "" : `<p class="fix" style="margin-top:12px">Ćwiczenia układa Gemini — dodaj klucz w <button class="link" id="gGoSet">Ustawieniach</button>.</p>`}
+      ${hasAI() ? "" : `<p class="fix" style="margin-top:12px">Ćwiczenia układa Gemini — dodaj klucz w <button class="link" id="gGoSet">Ustawieniach</button>.</p>`}
     </div>
     <input id="gSearch" placeholder="Szukaj tematu, np. present perfect, the, if…" autocomplete="off" value="${esc(q)}">
     <div id="gList" style="margin-top:10px">${GRAM_SECTIONS.map(([sec, list], si) => {
@@ -1148,11 +1264,11 @@ function renderUnit(n){
 
 /* ---------- ćwiczenia ---------- */
 async function loadQuiz(prompt, meta){
-  if(!pref("geminiKey")){ toast("Dodaj klucz Gemini w Ustawieniach"); showTab("settings"); return; }
+  if(!hasAI()){ toast("Dodaj klucz Gemini w Ustawieniach"); showTab("settings"); return; }
   quiz = { ...meta, loading: true };
   renderQuiz();
   try{
-    const r = await geminiJSON(prompt, 0.8, SCHEMA_GRAM);
+    const r = await aiJSON(prompt, 0.8, SCHEMA_GRAM);
     const ex = (r.cwiczenia || []).filter(x => x && x.zdanie && (x.typ === "wpisz" ? (x.odpowiedzi||[]).length : (x.opcje||[]).length > 1));
     if(!ex.length) throw new Error("Gemini nie przysłał ćwiczeń — spróbuj jeszcze raz");
     if(meta.unit && r.wyjasnienie) saveGram(meta.unit, { expl: { wyjasnienie: r.wyjasnienie, wzory: r.wzory || [], uwaga: r.uwaga || "" } }).catch(() => {});
@@ -1261,7 +1377,7 @@ function renderQuiz(){
       if($("qAppeal")) $("qAppeal").onclick = async () => {
         $("qAppeal").outerHTML = `<div class="small muted" id="qAppealRes" style="margin-top:6px">⏳ Pytam Gemini…</div>`;
         try{
-          const r = await geminiJSON(`Uczeń uzupełniał lukę w zdaniu: "${x.zdanie}". Wpisał: "${q.given[q.i]}" (pełne zdanie: "${full}"). Oczekiwane odpowiedzi: ${JSON.stringify(x.odpowiedzi)}.
+          const r = await aiJSON(`Uczeń uzupełniał lukę w zdaniu: "${x.zdanie}". Wpisał: "${q.given[q.i]}" (pełne zdanie: "${full}"). Oczekiwane odpowiedzi: ${JSON.stringify(x.odpowiedzi)}.
 Czy jego odpowiedź jest gramatycznie poprawna i naturalna w tym zdaniu? Zwróć WYŁĄCZNIE JSON: {"poprawna":true/false,"komentarz":"1–2 zdania po polsku"}`, 0.1, SCHEMA_APPEAL);
           if(r.poprawna){ q.res[q.i] = true; x.odpowiedzi.push(q.given[q.i]); x.dlaczego = (x.dlaczego ? x.dlaczego + " " : "") + "(Twoja wersja też jest OK: " + (r.komentarz||"") + ")"; renderQuiz(); }
           else $("qAppealRes").textContent = "❌ " + (r.komentarz || "Niestety nie.");
@@ -1272,15 +1388,638 @@ Czy jego odpowiedź jest gramatycznie poprawna i naturalna w tym zdaniu? Zwróć
   $("qQuit").onclick = () => { quiz = null; renderGrammar(); };
 }
 
+/* ================= TESTY: testy A1–C2, zapisane testy, moje błędy (screeny), historia ================= */
+let xdocs = {};                                   // dokumenty „_…” z bazy (testy, błędy, historia)
+let tView = pref("tView") || "new";
+let tRun = null;                                  // trwający quiz
+let tScreen = null;                               // import screenów
+
+async function saveX(id, data){
+  if(cloud) await setDoc(doc(col, id), data, { merge:true });
+  xdocs[id] = { ...(xdocs[id] || {}), ...data };
+  if(!cloud){ try{ localStorage.setItem("moj-angielski-x", JSON.stringify(xdocs)); }catch(e){} }
+  extraChanged();
+}
+async function delX(id){
+  if(cloud) await deleteDoc(doc(col, id));
+  delete xdocs[id];
+  if(!cloud){ try{ localStorage.setItem("moj-angielski-x", JSON.stringify(xdocs)); }catch(e){} }
+  extraChanged();
+}
+function extraChanged(){ if($("tab-tests").classList.contains("on") && !tRun && !tScreen) renderTests(); }
+const tests = () => Object.entries(xdocs).filter(([id]) => id.startsWith("_t_")).map(([id, d]) => ({ id, ...d })).sort((a,b) => (b.created||"").localeCompare(a.created||""));
+const errs  = () => Object.entries(xdocs).filter(([id]) => id.startsWith("_e_")).map(([id, d]) => ({ id, ...d })).sort((a,b) => (b.added||"").localeCompare(a.added||""));
+const hist  = () => ((xdocs._historia && xdocs._historia.list) || []).slice().sort((a,b) => (b.at||"").localeCompare(a.at||""));
+
+function fmtDate(iso){
+  if(!iso) return "";
+  const d = new Date(iso);
+  return d.toLocaleDateString("pl-PL", { day:"numeric", month:"short" }) + ", " + d.toLocaleTimeString("pl-PL", { hour:"2-digit", minute:"2-digit" });
+}
+function plural(n, one, few, many){ const d = n % 10, dd = n % 100; return n + " " + (n === 1 ? one : (d >= 2 && d <= 4 && !(dd >= 12 && dd <= 14)) ? few : many); }
+function pct(ok, total){ return total ? Math.round(ok / total * 100) : 0; }
+function pctCls(p){ return p >= 80 ? "pGood" : p >= 50 ? "pMid" : "pBad"; }
+
+/* ---------- pytania: porządkowanie i tasowanie ---------- */
+function normQ(x){
+  if(!x || !x.zdanie) return null;
+  const q = {
+    typ: x.typ === "wpisz" ? "wpisz" : "wybor",
+    zdanie: String(x.zdanie).trim(),
+    opcje: (x.opcje || []).map(o => String(o).trim()).filter(Boolean),
+    poprawna: Number.isInteger(x.poprawna) ? x.poprawna : -1,
+    odpowiedzi: (x.odpowiedzi || []).map(o => String(o).trim()).filter(Boolean),
+    podpowiedz: x.podpowiedz || "", dlaczego: x.dlaczego || "", temat: x.temat || ""
+  };
+  if(q.typ === "wybor"){
+    if(q.opcje.length < 2){
+      if(!q.odpowiedzi.length && !q.opcje.length) return null;
+      q.typ = "wpisz"; if(!q.odpowiedzi.length) q.odpowiedzi = [q.opcje[0]]; q.opcje = [];
+    } else if(q.poprawna < 0 || q.poprawna >= q.opcje.length){
+      const k = q.opcje.findIndex(o => q.odpowiedzi.some(a => norm(a) === norm(o)));
+      if(k < 0) return null;
+      q.poprawna = k;
+    }
+  }
+  if(q.typ === "wpisz" && !q.odpowiedzi.length) return null;
+  return q;
+}
+function shuffleArr(a){ a = a.slice(); for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function shuffleOpts(q){
+  if(q.typ !== "wybor") return { ...q };
+  const order = shuffleArr(q.opcje.map((_, i) => i));
+  return { ...q, opcje: order.map(i => q.opcje[i]), poprawna: order.indexOf(q.poprawna) };
+}
+const correctOf = q => q.typ === "wpisz" ? q.odpowiedzi[0] : q.opcje[q.poprawna];
+
+/* ---------- schematy i polecenia dla AI ---------- */
+const QSCHEMA = {
+  typ: { type:"STRING", enum:["wybor","wpisz"] }, zdanie:T.s, opcje:T.arr(T.s), poprawna:T.i,
+  odpowiedzi:T.arr(T.s), podpowiedz:T.s, dlaczego:T.s, temat:T.s
+};
+const SCHEMA_TEST = T.obj({ tytul:T.s, pytania: T.arr(T.obj(QSCHEMA, ["typ","zdanie","dlaczego","temat"])) }, ["pytania"]);
+const SCHEMA_SCREEN = T.obj({ pytania: T.arr(T.obj({ ...QSCHEMA, twoja:T.s, pomylka:T.b }, ["typ","zdanie","dlaczego","temat"])) }, ["pytania"]);
+
+const LEVELS = { A1:"początkujący", A2:"podstawowy", B1:"średnio zaawansowany", B2:"wyższy średnio zaawansowany", C1:"zaawansowany", C2:"biegły" };
+const DIFFS = {
+  latwe:   ["Łatwe",   "krótkie, proste zdania", "łatwe jak na ten poziom: krótkie, proste zdania i oczywisty kontekst"],
+  srednie: ["Średnie", "typowe zdania",          "typowe dla tego poziomu: zdania średniej długości, naturalny kontekst"],
+  trudne:  ["Trudne",  "dłuższe, podchwytliwe",  "trudne jak na ten poziom: dłuższe, złożone zdania, podchwytliwe błędne opcje i wyjątki od reguł"]
+};
+const EXPLS = {
+  brak:        ["Bez",          "tylko poprawna odpowiedź", `pole "dlaczego" zostaw puste ("")`],
+  krotkie:     ["Krótkie",      "1 zdanie",                 `pole "dlaczego": jedno krótkie zdanie po polsku`],
+  szczegolowe: ["Szczegółowe",  "reguła + dlaczego inne źle", `pole "dlaczego": 2–4 zdania po polsku — reguła, dlaczego pozostałe opcje są złe i mini-przykład; ważne słowa w **pogrubieniu**`]
+};
+const TYPES = { mix:"Mix", wybor:"Wybór", wpisz:"Wpisywanie" };
+const COUNTS = [5, 10, 15, 20, 30, 50];
+
+const Q_FORMAT = `{"tytul":"krótki tytuł po polsku","pytania":[
+ {"typ":"wybor","zdanie":"zdanie z jedną luką ___","opcje":["…","…","…","…"],"poprawna":0,"odpowiedzi":[],"podpowiedz":"","dlaczego":"…","temat":"nazwa zagadnienia po angielsku"},
+ {"typ":"wpisz","zdanie":"zdanie z jedną luką ___","opcje":[],"poprawna":-1,"odpowiedzi":["każdy poprawny wariant, także ze skrótami"],"podpowiedz":"co wpisać, np. (go)","dlaczego":"…","temat":"…"}]}`;
+const Q_RULES = `Zasady: własne, oryginalne zdania z codziennego życia (praca, dom, znajomi, podróże, filmy); jedna luka ___ w każdym zdaniu;
+w „wybor” 4 opcje, dokładnie jedna poprawna, poprawna na losowej pozycji; w „wpisz” luka ma 1–4 słowa, a „odpowiedzi” zawierają wszystkie naturalne poprawne warianty.`;
+
+function testPrompt(c, n, avoid){
+  const topic = c.custom ? c.custom : c.topic === "mix" ? "mieszany — różne zagadnienia typowe dla tego poziomu"
+    : c.topic === "weak" ? `moje słabe punkty: ${weakTopics().join(", ") || "różne"}` : c.topic;
+  const typy = c.typy === "mix" ? "mniej więcej pół na pół „wybor” i „wpisz”" : c.typy === "wybor" ? "tylko „wybor”" : "tylko „wpisz”";
+  return `Ułóż ${n} pytań testu z gramatyki angielskiej dla Polaka.
+Poziom CEFR: ${c.level} (${LEVELS[c.level]}). Trudność zadań: ${DIFFS[c.diff][2]}.
+Temat: ${topic}.
+Rodzaj zadań: ${typy}.
+Wyjaśnienia: ${EXPLS[c.expl][2]}.
+Zwróć WYŁĄCZNIE obiekt JSON w formacie:
+${Q_FORMAT}
+${Q_RULES} Słownictwo dopasuj do poziomu ${c.level}.${avoid.length ? `\nNie powtarzaj tych zdań ani bardzo podobnych: ${avoid.slice(-30).map(z => JSON.stringify(z)).join("; ")}` : ""}`;
+}
+function weakTopics(){
+  const cnt = {};
+  errs().filter(e => !e.mastered).forEach(e => { const t = (e.q && e.q.temat || "").trim(); if(t) cnt[t] = (cnt[t] || 0) + 1; });
+  return Object.entries(cnt).sort((a,b) => b[1] - a[1]).slice(0, 8).map(x => x[0]);
+}
+
+async function generateQuestions(promptFn, total, onProgress){
+  const batch = 12, out = [];
+  let empty = 0, title = "";
+  while(out.length < total && empty < 2){
+    const n = Math.min(batch, total - out.length);
+    onProgress && onProgress(out.length, total);
+    const r = await aiJSON(promptFn(n, out.map(q => q.zdanie)), 0.9, SCHEMA_TEST);
+    title = title || r.tytul || "";
+    const got = (r.pytania || []).map(normQ).filter(Boolean)
+      .filter(q => !out.some(o => norm(o.zdanie) === norm(q.zdanie)));
+    if(!got.length) empty++; else empty = 0;
+    out.push(...got.slice(0, total - out.length));
+  }
+  if(!out.length) throw new Error("AI nie przysłało pytań — spróbuj jeszcze raz");
+  return { questions: out, title };
+}
+
+/* ---------- zapis wyników ---------- */
+async function addHistory(entry){
+  const list = ((xdocs._historia && xdocs._historia.list) || []).concat([{ at: new Date().toISOString(), ...entry }]).slice(-400);
+  await saveX("_historia", { list });
+}
+async function addErrors(wrong, source, from){
+  const have = new Set(errs().map(e => norm(e.q && e.q.zdanie)));
+  let added = 0;
+  for(const w of wrong){
+    const k = norm(w.q.zdanie);
+    const ex = errs().find(e => norm(e.q && e.q.zdanie) === k);
+    if(ex){ await saveX(ex.id, { streak: 0, mastered: false, twoja: w.given || ex.twoja || "" }); continue; }
+    if(have.has(k)) continue;
+    have.add(k);
+    const q = { ...w.q };
+    await saveX("_e_" + newId(), { kind:"err", q, twoja: w.given || "", source, from: from || "", added: new Date().toISOString(), streak: 0, mastered: false });
+    added++;
+  }
+  return added;
+}
+
+/* ================= WIDOK ZAKŁADKI ================= */
+function renderTests(){
+  if(tRun) return renderRun();
+  if(tScreen) return renderScreen();
+  const box = $("testsBox");
+  const nErr = errs().filter(e => !e.mastered).length;
+  box.innerHTML = `
+    <div class="chips seg" id="tSeg">
+      ${[["new","📝 Nowy test"],["saved",`💾 Zapisane <em>${tests().length}</em>`],["errs",`📸 Moje błędy <em>${nErr}</em>`],["hist","📊 Historia"]]
+        .map(([k, l]) => `<button class="chip ${tView === k ? "on" : ""}" data-v="${k}">${l}</button>`).join("")}
+    </div>
+    ${hasAI() ? "" : `<p class="fix">Testy układa AI — dodaj klucz Gemini w <button class="link" id="tGoSet">Ustawieniach</button>.</p>`}
+    <div id="tBody"></div>`;
+  box.querySelectorAll("#tSeg [data-v]").forEach(b => b.onclick = () => { tView = b.dataset.v; pref("tView", tView); renderTests(); });
+  if($("tGoSet")) $("tGoSet").onclick = () => showTab("settings");
+  ({ new: viewNew, saved: viewSaved, errs: viewErrs, hist: viewHist })[tView]();
+}
+
+/* ---------- 📝 nowy test ---------- */
+function testCfg(){
+  let c = {};
+  try{ c = JSON.parse(pref("tCfg") || "{}"); }catch(e){}
+  return { level:"B1", diff:"srednie", expl:"krotkie", count:10, typy:"mix", topic:"mix", custom:"", ...c };
+}
+function viewNew(){
+  const c = testCfg();
+  const chips = (key, entries) => `<div class="chips pick" data-k="${key}">${entries.map(([v, l, sub]) =>
+    `<button class="chip ${String(c[key]) === String(v) ? "on" : ""}" data-val="${v}">${l}${sub ? `<small>${sub}</small>` : ""}</button>`).join("")}</div>`;
+  const weak = weakTopics();
+  $("tBody").innerHTML = `
+    <div class="card form">
+      <label>Poziom</label>
+      ${chips("level", Object.keys(LEVELS).map(k => [k, k]))}
+      <div class="muted small">${c.level} — ${LEVELS[c.level]}</div>
+
+      <label>Trudność zadań</label>
+      ${chips("diff", Object.entries(DIFFS).map(([k, v]) => [k, v[0], v[1]]))}
+
+      <label>Wyjaśnienia po odpowiedzi</label>
+      ${chips("expl", Object.entries(EXPLS).map(([k, v]) => [k, v[0], v[1]]))}
+
+      <label>Liczba pytań</label>
+      ${chips("count", COUNTS.map(n => [n, n]))}
+
+      <label>Rodzaj zadań</label>
+      ${chips("typy", Object.entries(TYPES))}
+
+      <label for="tTopic">Temat</label>
+      <select id="tTopic" style="width:100%;padding:10px 12px">
+        <option value="mix">🎲 Mieszany (różne zagadnienia)</option>
+        ${weak.length ? `<option value="weak">🎯 Moje słabe punkty (z „Moich błędów”)</option>` : ""}
+        ${GRAM_SECTIONS.map(([sec]) => `<option value="${esc(sec)}">${esc(SECTION_PL[sec] || sec)}</option>`).join("")}
+      </select>
+      <input id="tCustom" placeholder="…albo wpisz własny temat, np. phrasal verbs z „get”" value="${esc(c.custom)}" style="margin-top:8px" autocomplete="off">
+
+      <button class="primary wide" id="tMake">✨ Ułóż test (${c.count} pytań)</button>
+      <div class="muted small" style="text-align:center;margin-top:6px">Test zapisze się sam w „Zapisanych” — możesz go potem powtórzyć.</div>
+    </div>`;
+  $("tTopic").value = [...$("tTopic").options].some(o => o.value === c.topic) ? c.topic : "mix";
+  const save = (patch) => pref("tCfg", JSON.stringify({ ...testCfg(), ...patch }));
+  $("tBody").querySelectorAll(".pick").forEach(g => g.onclick = e => {
+    const b = e.target.closest("[data-val]"); if(!b) return;
+    const k = g.dataset.k; let v = b.dataset.val; if(k === "count") v = +v;
+    save({ [k]: v }); viewNew();
+  });
+  $("tTopic").onchange = () => save({ topic: $("tTopic").value });
+  $("tCustom").oninput = () => save({ custom: $("tCustom").value.trim() });
+  $("tMake").onclick = () => makeTest(testCfg());
+}
+
+async function makeTest(c){
+  if(!hasAI()){ toast("Dodaj klucz AI w Ustawieniach"); showTab("settings"); return; }
+  const topicLabel = c.custom || (c.topic === "mix" ? "mieszany" : c.topic === "weak" ? "moje słabe punkty" : (SECTION_PL[c.topic] || c.topic));
+  tRun = { loading: `Układam pytania…`, label: `${c.level} · ${topicLabel}` };
+  renderRun();
+  try{
+    const { questions } = await generateQuestions((n, avoid) => testPrompt(c, n, avoid), c.count,
+      (have, tot) => { if(tRun && tRun.loading){ tRun.loading = `Układam pytania… ${have}/${tot}`; renderRun(); } });
+    const id = "_t_" + newId();
+    const title = `${c.level} · ${topicLabel}`;
+    const test = { kind:"test", title, level:c.level, diff:c.diff, expl:c.expl, typy:c.typy, topic:topicLabel, count:questions.length,
+                   questions, created: new Date().toISOString(), results: [] };
+    saveX(id, test).catch(fail);
+    startRun({ questions, label: title, expl: c.expl, testId: id, kind: "test", level: c.level });
+  }catch(e){
+    tRun = { error: e.message === "NOKEY" ? "Brak klucza AI" : e.message, label: tRun.label, retry: () => makeTest(c) };
+    renderRun();
+  }
+}
+
+/* ---------- 💾 zapisane testy ---------- */
+function viewSaved(){
+  const list = tests();
+  $("tBody").innerHTML = list.length ? list.map(t => {
+    const res = t.results || [], last = res[res.length - 1];
+    const best = res.reduce((m, r) => Math.max(m, pct(r.ok, r.total)), 0);
+    return `<div class="item">
+      <div class="en">${esc(t.title)}</div>
+      <div class="muted small">${t.count} pytań · ${DIFFS[t.diff] ? DIFFS[t.diff][0].toLowerCase() : ""} · wyjaśnienia: ${EXPLS[t.expl] ? EXPLS[t.expl][0].toLowerCase() : ""} · ${fmtDate(t.created)}</div>
+      <div class="small" style="margin-top:6px">${res.length
+        ? `Podejść: <b>${res.length}</b> · ostatnio <span class="pill ${pctCls(pct(last.ok, last.total))}">${last.ok}/${last.total}</span> · najlepiej <b>${best}%</b>`
+        : `<span class="muted">Jeszcze nie rozwiązany do końca</span>`}</div>
+      <div class="actions">
+        <button class="small primary" data-run="${t.id}">▶ Rozwiąż</button>
+        <button class="small" data-redo="${t.id}" title="Ułóż nowy test z tymi samymi ustawieniami">✨ Podobny nowy</button>
+        <button class="small danger" data-tdel="${t.id}">Usuń</button>
+      </div></div>`; }).join("")
+    : `<div class="empty">Nie masz jeszcze zapisanych testów.<br>Ułóż pierwszy w „📝 Nowy test”.</div>`;
+  $("tBody").onclick = e => {
+    const b = e.target.closest("button"); if(!b) return;
+    const t = tests().find(x => x.id === (b.dataset.run || b.dataset.redo || b.dataset.tdel)); if(!t) return;
+    if(b.dataset.run) startRun({ questions: shuffleArr(t.questions).map(shuffleOpts), label: t.title, expl: t.expl, testId: t.id, kind: "test", level: t.level });
+    if(b.dataset.redo) makeTest({ level: t.level, diff: t.diff, expl: t.expl, typy: t.typy || "mix", count: t.count, topic: "mix", custom: t.topic === "mieszany" ? "" : t.topic });
+    if(b.dataset.tdel && confirm(`Usunąć test „${t.title}”?`)) delX(t.id).catch(fail);
+  };
+}
+
+/* ---------- 📸 moje błędy ---------- */
+let errFilter = "todo", errCount = 10;
+function viewErrs(){
+  const all = errs(), todo = all.filter(e => !e.mastered), done = all.length - todo.length;
+  const shown = errFilter === "all" ? all : errFilter === "done" ? all.filter(e => e.mastered) : todo;
+  $("tBody").innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div><b>Bank błędów</b><div class="muted small">${todo.length} do powtórki · ${done} opanowanych</div></div>
+        <button class="primary small" id="eShot">📸 Dodaj screeny</button>
+      </div>
+      <input type="file" id="eFile" accept="image/*" multiple hidden>
+      <div class="muted small" style="margin-top:8px">Wrzuć zrzuty ekranu z quizów (np. z ChatGPT) — AI odczyta pytania i Twoje błędy. Zdjęcia nie są nigdzie zapisywane, tylko odczytany tekst.</div>
+      ${todo.length ? `
+        <label style="margin-top:14px">Powtórka — ile pytań</label>
+        <div class="chips pick" id="eCnt">${[10, 20, 0].map(n => `<button class="chip ${errCount === n ? "on" : ""}" data-n="${n}">${n || "Wszystkie (" + todo.length + ")"}</button>`).join("")}</div>
+        <div class="row">
+          <button class="primary" id="eRun" style="flex:1">▶ Powtórz błędy</button>
+          <button id="eSim" style="flex:1" title="AI ułoży nowe pytania na te same zasady">✨ Podobne pytania</button>
+        </div>
+        <div class="muted small" style="margin-top:6px">Pytanie trafia do „opanowanych”, gdy odpowiesz dobrze 3 razy z rzędu.</div>` : ""}
+    </div>
+    ${all.length ? `<div class="chips" id="eFilt">${[["todo","Do powtórki"],["done","Opanowane"],["all","Wszystkie"]].map(([k, l]) =>
+        `<button class="chip ${errFilter === k ? "on" : ""}" data-f="${k}">${l}</button>`).join("")}</div>` : ""}
+    <div id="eList">${shown.length ? shown.map(errCard).join("") : `<div class="empty">${all.length ? "Pusto w tym filtrze" : "Nie masz jeszcze zapisanych błędów.<br>Dodaj screeny albo rozwiąż test — błędy trafią tu same."}</div>`}</div>`;
+  $("eShot").onclick = () => $("eFile").click();
+  $("eFile").onchange = e => { const files = [...e.target.files]; e.target.value = ""; if(files.length) importScreens(files); };
+  if($("eCnt")) $("eCnt").onclick = e => { const b = e.target.closest("[data-n]"); if(b){ errCount = +b.dataset.n; viewErrs(); } };
+  if($("eRun")) $("eRun").onclick = () => {
+    const pick = shuffleArr(todo).slice(0, errCount || todo.length);
+    startRun({ questions: pick.map(e => shuffleOpts(e.q)), errIds: pick.map(e => e.id), label: "Powtórka błędów", expl: "szczegolowe", kind: "err" });
+  };
+  if($("eSim")) $("eSim").onclick = similarQuiz;
+  if($("eFilt")) $("eFilt").onclick = e => { const b = e.target.closest("[data-f]"); if(b){ errFilter = b.dataset.f; viewErrs(); } };
+  $("eList").onclick = e => {
+    const b = e.target.closest("button"); if(!b) return;
+    const it = errs().find(x => x.id === (b.dataset.esay || b.dataset.emaster || b.dataset.edel)); if(!it) return;
+    if(b.dataset.esay) speak(it.q.zdanie.replace(/_{2,}/, correctOf(it.q)));
+    if(b.dataset.emaster) saveX(it.id, { mastered: !it.mastered, streak: it.mastered ? 0 : 3 }).catch(fail);
+    if(b.dataset.edel && confirm("Usunąć to pytanie z banku błędów?")) delX(it.id).catch(fail);
+  };
+}
+function errCard(e){
+  const q = e.q || {}, s = Math.min(3, e.streak || 0);
+  return `<div class="item ${e.mastered ? "known" : ""}">
+    ${q.temat ? `<span class="tag small">${esc(q.temat)}</span>` : ""}
+    <div class="qSent" style="font-size:1.02rem;margin-top:6px">${filled(q.zdanie || "", correctOf(q) || "")}</div>
+    ${q.typ === "wybor" ? `<div class="muted small">Opcje: ${q.opcje.map(esc).join(" · ")}</div>` : ""}
+    ${e.twoja ? `<div class="small" style="margin-top:4px"><span class="bad">✗ Twoja: ${esc(e.twoja)}</span> &nbsp; <span class="ok">✓ ${esc(correctOf(q))}</span></div>` : ""}
+    ${q.dlaczego ? `<div class="small muted" style="margin-top:4px">${md(q.dlaczego)}</div>` : ""}
+    <div class="actions" style="align-items:center">
+      <span class="dots" title="Dobre odpowiedzi z rzędu">${[0,1,2].map(i => `<i class="${i < s ? "on" : ""}"></i>`).join("")}</span>
+      <span style="flex:1"></span>
+      <button class="small" data-esay="${e.id}">🔊</button>
+      <button class="small knownBtn ${e.mastered ? "on" : ""}" data-emaster="${e.id}">${e.mastered ? "✓ Opanowane" : "Opanowane?"}</button>
+      <button class="small danger" data-edel="${e.id}">Usuń</button>
+    </div></div>`;
+}
+
+async function similarQuiz(){
+  if(!hasAI()){ toast("Dodaj klucz AI w Ustawieniach"); showTab("settings"); return; }
+  const base = shuffleArr(errs().filter(e => !e.mastered)).slice(0, 8);
+  const lines = base.map(e => `- ${e.q.zdanie} → poprawnie: ${correctOf(e.q)} (temat: ${e.q.temat || "?"})`).join("\n");
+  tRun = { loading: "Układam podobne pytania…", label: "Podobne do moich błędów" };
+  renderRun();
+  try{
+    const { questions } = await generateQuestions((n, avoid) => `Uczeń (Polak) pomylił się w tych pytaniach z gramatyki angielskiej:
+${lines}
+Ułóż ${n} NOWYCH pytań, które ćwiczą dokładnie te same zasady (inne zdania, inny kontekst), mniej więcej pół na pół „wybor” i „wpisz”.
+Wyjaśnienia: ${EXPLS.szczegolowe[2]}.
+Zwróć WYŁĄCZNIE obiekt JSON w formacie:
+${Q_FORMAT}
+${Q_RULES}${avoid.length ? `\nNie powtarzaj: ${avoid.map(z => JSON.stringify(z)).join("; ")}` : ""}`, 10);
+    startRun({ questions, label: "Podobne do moich błędów", expl: "szczegolowe", kind: "similar" });
+  }catch(e){ tRun = { error: e.message === "NOKEY" ? "Brak klucza AI" : e.message, label: "Podobne pytania", retry: similarQuiz }; renderRun(); }
+}
+
+/* ---------- import screenów ---------- */
+async function fileToImage(file){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("To nie jest obrazek")); i.src = url; });
+    const max = 2000, s = Math.min(1, max / Math.max(img.width, img.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+    const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+    return { mime: "image/jpeg", b64: c.toDataURL("image/jpeg", 0.85).split(",")[1] };
+  } finally { URL.revokeObjectURL(url); }
+}
+const SCREEN_PROMPT = `Na zrzucie ekranu jest quiz z gramatyki angielskiej (np. rozwiązywany w ChatGPT). Użytkownik (Polak) zapisał ten zrzut, bo popełnił tam błędy.
+Odczytaj WSZYSTKIE pytania widoczne na obrazku i zwróć WYŁĄCZNIE obiekt JSON {"pytania":[…]}, gdzie każde pytanie to:
+{"typ":"wybor" jeśli są opcje do wyboru, inaczej "wpisz",
+ "zdanie":"treść pytania po angielsku; brakujące miejsce oznacz ___",
+ "opcje":["opcje odpowiedzi bez oznaczeń a), b), c)"],
+ "poprawna": indeks poprawnej opcji liczony od 0 (dla "wpisz": -1),
+ "odpowiedzi":["poprawne odpowiedzi — dla typu wpisz, wszystkie warianty"],
+ "podpowiedz":"np. czasownik w nawiasie, jeśli jest; inaczej ''",
+ "twoja":"odpowiedź, którą wybrał lub wpisał użytkownik, jeśli widać; inaczej ''",
+ "pomylka": true, jeśli widać, że użytkownik odpowiedział źle; inaczej false,
+ "dlaczego":"wyjaśnienie po polsku, 2–3 zdania: reguła i dlaczego tak (wykorzystaj wyjaśnienie ze screena, jeśli jest)",
+ "temat":"krótka nazwa zagadnienia po angielsku, np. Present perfect vs past simple"}
+Jeśli poprawnej odpowiedzi nie ma na obrazku — ustal ją sam, starannie. Nie wymyślaj pytań, których nie ma na obrazku. Jeśli na obrazku nie ma quizu, zwróć {"pytania":[]}.`;
+
+async function importScreens(files){
+  if(!hasAI()){ toast("Dodaj klucz AI w Ustawieniach"); showTab("settings"); return; }
+  tScreen = { files: files.length, done: 0, found: [], errors: [] };
+  renderScreen();
+  for(const f of files){
+    try{
+      const img = await fileToImage(f);
+      const r = await aiJSON(SCREEN_PROMPT, 0.1, SCHEMA_SCREEN, [img]);
+      (r.pytania || []).forEach(x => {
+        const q = normQ(x); if(!q) return;
+        const dup = tScreen.found.some(o => norm(o.q.zdanie) === norm(q.zdanie)) || errs().some(e => norm(e.q && e.q.zdanie) === norm(q.zdanie));
+        tScreen.found.push({ q, twoja: String(x.twoja || "").trim(), mistake: !!x.pomylka, dup, pick: false, edit: false });
+      });
+    }catch(e){ tScreen.errors.push(`${f.name || "zrzut"}: ${e.message === "NOKEY" ? "brak klucza AI" : e.message}`); }
+    tScreen.done++;
+    renderScreen();
+  }
+  const anyMistake = tScreen.found.some(x => x.mistake && !x.dup);
+  tScreen.found.forEach(x => x.pick = !x.dup && (anyMistake ? x.mistake : true));
+  tScreen.finished = true;
+  renderScreen();
+}
+function renderScreen(){
+  const s = tScreen, box = $("testsBox");
+  if(!s.finished){
+    box.innerHTML = `<div class="card loading"><div class="spin"></div>Odczytuję screeny… ${s.done}/${s.files}<div class="small">Znalezione pytania: ${s.found.length}</div></div>`;
+    return;
+  }
+  const n = s.found.filter(x => x.pick).length;
+  box.innerHTML = `
+    <div class="row" style="justify-content:space-between;margin-bottom:8px">
+      <button class="ghost small" id="sBack">✕ Anuluj</button><span class="muted small">Znaleziono ${s.found.length} pytań</span></div>
+    ${s.errors.length ? `<div class="fix">${s.errors.map(esc).join("<br>")}</div>` : ""}
+    ${s.found.length ? `<p class="muted small">Zaznacz, co zapisać do „Moich błędów”. Pytania, w których się pomyliłeś, są zaznaczone same. ✎ pozwala poprawić, jeśli AI coś źle odczytało.</p>` : `<div class="empty">Nie udało się znaleźć pytań na tych zrzutach.</div>`}
+    ${s.found.map((x, i) => `
+      <div class="item scr ${x.pick ? "picked" : ""}">
+        <label class="chk"><input type="checkbox" data-pick="${i}" ${x.pick ? "checked" : ""}>
+          <span>${x.mistake ? `<span class="pill pBad">tu się pomyliłeś</span>` : ""}${x.dup ? `<span class="pill">już w banku</span>` : ""}${x.q.temat ? `<span class="tag small">${esc(x.q.temat)}</span>` : ""}</span></label>
+        ${x.edit ? `
+          <label>Pytanie</label><input data-ez="${i}" value="${esc(x.q.zdanie)}">
+          ${x.q.typ === "wybor"
+            ? `<label>Poprawna odpowiedź</label><select data-ep="${i}" style="width:100%;padding:10px">${x.q.opcje.map((o, k) => `<option value="${k}" ${k === x.q.poprawna ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`
+            : `<label>Poprawne odpowiedzi (oddziel „ / ”)</label><input data-eo="${i}" value="${esc(x.q.odpowiedzi.join(" / "))}">`}
+          <label>Twoja odpowiedź</label><input data-et="${i}" value="${esc(x.twoja)}">`
+        : `
+          <div class="qSent" style="font-size:1rem;margin-top:6px">${filled(x.q.zdanie, correctOf(x.q))}</div>
+          ${x.q.typ === "wybor" ? `<div class="muted small">Opcje: ${x.q.opcje.map(esc).join(" · ")}</div>` : ""}
+          ${x.twoja ? `<div class="small"><span class="${x.mistake ? "bad" : "ok"}">Twoja: ${esc(x.twoja)}</span></div>` : ""}
+          ${x.q.dlaczego ? `<div class="small muted" style="margin-top:4px">${md(x.q.dlaczego)}</div>` : ""}`}
+        <div class="actions"><button class="small ghost" data-edit="${i}">${x.edit ? "✓ Gotowe" : "✎ Popraw"}</button></div>
+      </div>`).join("")}
+    ${s.found.length ? `<div class="stickyBar"><button class="primary wide" id="sSave" ${n ? "" : "disabled"} style="margin:0">💾 Zapisz zaznaczone (${n})</button></div>` : ""}`;
+  $("sBack").onclick = () => { tScreen = null; renderTests(); };
+  box.querySelectorAll("[data-pick]").forEach(c => c.onchange = () => { s.found[+c.dataset.pick].pick = c.checked; renderScreen(); });
+  box.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => { const x = s.found[+b.dataset.edit]; x.edit = !x.edit; renderScreen(); });
+  box.querySelectorAll("[data-ez]").forEach(inp => inp.oninput = () => { s.found[+inp.dataset.ez].q.zdanie = inp.value; });
+  box.querySelectorAll("[data-ep]").forEach(sel => sel.onchange = () => { s.found[+sel.dataset.ep].q.poprawna = +sel.value; });
+  box.querySelectorAll("[data-eo]").forEach(inp => inp.oninput = () => { s.found[+inp.dataset.eo].q.odpowiedzi = inp.value.split("/").map(t => t.trim()).filter(Boolean); });
+  box.querySelectorAll("[data-et]").forEach(inp => inp.oninput = () => { s.found[+inp.dataset.et].twoja = inp.value; });
+  if($("sSave")) $("sSave").onclick = async () => {
+    $("sSave").disabled = true; $("sSave").textContent = "Zapisuję…";
+    const pick = s.found.filter(x => x.pick).map(x => ({ q: normQ(x.q) || x.q, given: x.twoja }));
+    try{
+      const added = await addErrors(pick, "screen");
+      toast("Zapisano " + plural(added, "pytanie", "pytania", "pytań"));
+      tScreen = null; tView = "errs"; pref("tView", "errs"); renderTests();
+    }catch(e){ fail(e); $("sSave").disabled = false; $("sSave").textContent = "Spróbuj ponownie"; }
+  };
+}
+
+/* ---------- 📊 historia ---------- */
+function viewHist(){
+  const h = hist();
+  if(!h.length){ $("tBody").innerHTML = `<div class="empty">Tu pojawią się wyniki Twoich testów i powtórek.</div>`; return; }
+  const avg = Math.round(h.reduce((s, r) => s + pct(r.ok, r.total), 0) / h.length);
+  const week = h.filter(r => Date.now() - new Date(r.at) < 7 * 864e5).length;
+  const last = h.slice(0, 20).reverse();
+  $("tBody").innerHTML = `
+    <div class="card">
+      <div class="statRow">
+        <div><b>${h.length}</b><span>podejść</span></div>
+        <div><b>${avg}%</b><span>średni wynik</span></div>
+        <div><b>${week}</b><span>w tym tygodniu</span></div>
+      </div>
+      <div class="spark" title="Ostatnie wyniki">${last.map(r => { const p = pct(r.ok, r.total);
+        return `<i class="${pctCls(p)}" style="height:${Math.max(6, p)}%" title="${p}%"></i>`; }).join("")}</div>
+      <div class="muted small" style="text-align:center">ostatnie ${last.length} wyników</div>
+    </div>
+    ${h.map(r => { const p = pct(r.ok, r.total); return `
+      <div class="histRow">
+        <div style="flex:1"><div>${esc(r.title || "")}</div><div class="muted small">${fmtDate(r.at)}${r.level ? " · " + esc(r.level) : ""}</div></div>
+        <span class="pill ${pctCls(p)}">${r.ok}/${r.total} · ${p}%</span>
+      </div>`; }).join("")}`;
+}
+
+/* ================= ROZWIĄZYWANIE (wspólne dla testów, błędów i podobnych) ================= */
+function startRun(cfg){
+  tRun = { ...cfg, i: 0, res: [], given: [] };
+  renderRun();
+  window.scrollTo(0, 0);
+}
+function renderRun(){
+  const r = tRun, box = $("testsBox");
+  const head = `<div class="row" style="justify-content:space-between;margin-bottom:8px">
+      <button class="ghost small" id="rQuit">✕ Zakończ</button><span class="muted small">${esc(r.label || "")}</span></div>`;
+  const bindQuit = () => $("rQuit").onclick = () => {
+    if(r.questions && r.res.length && r.i < r.questions.length && !confirm("Przerwać? Wynik tej próby nie zostanie zapisany.")) return;
+    tRun = null; renderTests();
+  };
+  if(r.loading){ box.innerHTML = head + `<div class="card loading"><div class="spin"></div>${esc(r.loading)}</div>`; return bindQuit(); }
+  if(r.error){
+    box.innerHTML = head + `<div class="card"><p class="bad">Nie udało się: ${esc(r.error.slice(0, 180))}</p>${r.retry ? `<button class="primary wide" id="rRetry">Spróbuj jeszcze raz</button>` : ""}</div>`;
+    if($("rRetry")) $("rRetry").onclick = r.retry;
+    return bindQuit();
+  }
+  const total = r.questions.length;
+  if(r.i >= total) return renderRunEnd(head, bindQuit);
+
+  const x = r.questions[r.i], ans = r.res[r.i], answered = ans !== undefined;
+  const right = correctOf(x), showWhy = r.expl !== "brak" && x.dlaczego;
+  box.innerHTML = head + `
+    <div class="qBar"><div style="width:${r.i / total * 100}%"></div></div>
+    <div class="navRow">
+      <button class="navBtn" id="rPrev" ${r.i === 0 ? "disabled" : ""}>‹</button>
+      <div class="navMid"><b>Pytanie ${r.i + 1} / ${total}</b><span>${r.res.filter(Boolean).length} dobrze · ${r.res.filter(v => v === false).length} źle</span></div>
+      <button class="navBtn" id="rNext" ${answered || r.review ? "" : "disabled"}>›</button>
+    </div>
+    <div class="card">
+      ${x.temat && answered ? `<span class="tag small">${esc(x.temat)}</span>` : ""}
+      <div class="qSent" style="margin-top:6px">${answered ? filled(x.zdanie, r.given[r.i]) : gap(x.zdanie)}</div>
+      ${x.podpowiedz && x.typ === "wpisz" ? `<div class="muted small" style="margin-top:6px">Podpowiedź: ${esc(x.podpowiedz)}</div>` : ""}
+      ${x.typ === "wpisz" ? `
+        <div class="row" style="margin-top:14px">
+          <input id="rIn" placeholder="wpisz brakujące słowa" autocomplete="off" autocapitalize="off" spellcheck="false" ${answered ? "disabled" : ""} value="${answered ? esc(r.given[r.i]) : ""}">
+          ${answered ? "" : `<button class="primary" id="rCheck">Sprawdź</button>`}
+        </div>` : `
+        <div class="opts">${x.opcje.map((o, k) => {
+          let cls = ""; if(answered){ if(k === x.poprawna) cls = "right"; else if(o === r.given[r.i]) cls = "wrong"; }
+          return `<button class="opt ${cls}" data-o="${k}" ${answered ? "disabled" : ""}><b>${"ABCD"[k] || k + 1}</b> ${esc(o)}</button>`; }).join("")}</div>`}
+      ${answered ? `
+        <div class="verdict ${ans ? "good" : "badBox"}">
+          <b>${ans ? "✅ Dobrze!" : "❌ Poprawnie: " + esc(right)}</b>
+          ${x.typ === "wpisz" && x.odpowiedzi.length > 1 ? `<div class="small">Też poprawne: ${x.odpowiedzi.slice(1).map(esc).join(", ")}</div>` : ""}
+          ${showWhy ? `<div style="margin-top:4px">${md(x.dlaczego)}</div>` : ""}
+          ${!ans && x.typ === "wpisz" && !r.review ? `<button class="link" id="rAppeal" style="margin-top:6px">🤔 Moja odpowiedź też chyba jest dobra</button>` : ""}
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button class="small" id="rSay">🔊 Odsłuchaj</button>
+          <span style="flex:1"></span>
+          <button class="primary" id="rGo">${r.i + 1 < total ? "Dalej ›" : "Wynik ›"}</button>
+        </div>` : ""}
+    </div>`;
+  bindQuit();
+  const submit = (given) => {
+    const ok = x.typ === "wpisz" ? x.odpowiedzi.some(a => norm(a) === norm(given)) : given === x.opcje[x.poprawna];
+    r.given[r.i] = given; r.res[r.i] = ok;
+    if(r.kind === "err" && r.errIds){             // postęp w banku błędów zapisuje się od razu
+      const id = r.errIds[r.i], e = xdocs[id];
+      if(e){ const streak = ok ? (e.streak || 0) + 1 : 0; saveX(id, { streak, mastered: streak >= 3, ...(ok ? {} : { twoja: given }) }).catch(fail); }
+    }
+    renderRun();
+  };
+  $("rPrev").onclick = () => { r.i--; renderRun(); };
+  $("rNext").onclick = () => { r.i++; renderRun(); };
+  if(x.typ === "wpisz" && !answered){
+    const go = () => { const v = $("rIn").value.trim(); if(v) submit(v); else $("rIn").focus(); };
+    $("rCheck").onclick = go;
+    $("rIn").addEventListener("keydown", e => { if(e.key === "Enter") go(); });
+    setTimeout(() => $("rIn") && $("rIn").focus(), 50);
+  }
+  box.querySelectorAll(".opt").forEach(b => b.onclick = () => submit(x.opcje[+b.dataset.o]));
+  if(answered){
+    $("rSay").onclick = () => speak(x.zdanie.replace(/_{2,}/, right));
+    $("rGo").onclick = () => { r.i++; renderRun(); };
+    if($("rAppeal")) $("rAppeal").onclick = async () => {
+      $("rAppeal").outerHTML = `<div class="small muted" id="rAppealRes" style="margin-top:6px">⏳ Sprawdzam…</div>`;
+      try{
+        const a = await aiJSON(`Uczeń uzupełniał lukę w zdaniu: "${x.zdanie}". Wpisał: "${r.given[r.i]}" (pełne zdanie: "${x.zdanie.replace(/_{2,}/, r.given[r.i])}"). Oczekiwane odpowiedzi: ${JSON.stringify(x.odpowiedzi)}.
+Czy jego odpowiedź jest gramatycznie poprawna i naturalna w tym zdaniu? Zwróć WYŁĄCZNIE JSON: {"poprawna":true/false,"komentarz":"1–2 zdania po polsku"}`, 0.1, SCHEMA_APPEAL);
+        if(a.poprawna){
+          r.res[r.i] = true; x.odpowiedzi.push(r.given[r.i]);
+          x.dlaczego = (x.dlaczego ? x.dlaczego + " " : "") + "(Twoja wersja też jest OK: " + (a.komentarz || "") + ")";
+          if(r.kind === "err" && r.errIds){ const id = r.errIds[r.i], e = xdocs[id]; if(e) saveX(id, { streak: (e.streak || 0) + 1, q: { ...e.q, odpowiedzi: x.odpowiedzi } }).catch(fail); }
+          renderRun();
+        } else $("rAppealRes").textContent = "❌ " + (a.komentarz || "Niestety nie.");
+      }catch(e){ $("rAppealRes").textContent = "Nie udało się sprawdzić: " + e.message.slice(0, 80); }
+    };
+  }
+}
+
+function renderRunEnd(head, bindQuit){
+  const r = tRun, total = r.questions.length, ok = r.res.filter(Boolean).length, p = pct(ok, total);
+  const wrong = r.questions.map((q, k) => ({ q, given: r.given[k], ok: r.res[k] })).filter(w => w.ok === false);
+  $("testsBox").innerHTML = head + `
+    <div class="card empty">
+      <div class="big">${p >= 80 ? "🏆" : p >= 60 ? "👍" : "💪"}</div>
+      <div style="font-size:1.35rem;font-weight:700;color:var(--text)">${ok} / ${total} · ${p}%</div>
+      <p id="rSaved">${r.kind === "err" ? "Postęp w banku błędów zapisany." : "Zapisuję wynik…"}</p>
+      <div class="row" style="justify-content:center;flex-wrap:wrap">
+        <button id="rReview">📋 Przejrzyj</button>
+        <button class="primary" id="rAgain">🔁 Jeszcze raz</button>
+      </div>
+      ${wrong.length && r.kind !== "err" ? `<button class="ghost small wide" id="rWrongOnly">Powtórz tylko błędne (${wrong.length})</button>` : ""}
+    </div>
+    ${wrong.length ? `<h3 class="secH">Błędy w tej próbie</h3>${wrong.map(w => `
+      <div class="item"><div class="qSent" style="font-size:1rem">${filled(w.q.zdanie, correctOf(w.q))}</div>
+        <div class="small"><span class="bad">✗ ${esc(w.given || "")}</span> → <span class="ok">✓ ${esc(correctOf(w.q))}</span></div>
+        ${w.q.dlaczego && r.expl !== "brak" ? `<div class="small muted" style="margin-top:4px">${md(w.q.dlaczego)}</div>` : ""}</div>`).join("")}` : ""}`;
+  bindQuit();
+  $("rReview").onclick = () => { r.review = true; r.i = 0; renderRun(); };
+  $("rAgain").onclick = () => {
+    if(r.kind === "err" && r.errIds){
+      const pairs = shuffleArr(r.questions.map((q, k) => [q, r.errIds[k]]));
+      startRun({ ...r, questions: pairs.map(p => shuffleOpts(p[0])), errIds: pairs.map(p => p[1]), review: false, saved: false });
+    } else startRun({ ...r, questions: shuffleArr(r.questions).map(shuffleOpts), review: false, saved: false });
+  };
+  if($("rWrongOnly")) $("rWrongOnly").onclick = () => startRun({ ...r, questions: wrong.map(w => shuffleOpts(w.q)), label: r.label + " — błędne", testId: null, review: false, saved: false });
+  if(r.saved) { $("rSaved").textContent = "Wynik zapisany."; return; }
+  r.saved = true;
+  (async () => {
+    try{
+      await addHistory({ title: r.label, level: r.level || "", ok, total, kind: r.kind });
+      if(r.testId && xdocs[r.testId]){
+        const results = (xdocs[r.testId].results || []).concat([{ at: new Date().toISOString(), ok, total }]).slice(-50);
+        await saveX(r.testId, { results });
+      }
+      let msg = "Wynik zapisany w historii.";
+      if(r.kind !== "err" && wrong.length){ const n = await addErrors(wrong, r.kind, r.label); if(n) msg += ` ${plural(n, "błąd trafił", "błędy trafiły", "błędów trafiło")} do „📸 Moje błędy”.`; }
+      if($("rSaved")) $("rSaved").textContent = msg;
+    }catch(e){ fail(e); if($("rSaved")) $("rSaved").textContent = "Nie udało się zapisać wyniku."; }
+  })();
+}
+
 /* ================= USTAWIENIA ================= */
 $("gKey").value = pref("geminiKey") || "";
+$("oKey").value = pref("openaiKey") || "";
+$("aiEngine").value = aiEngine();
+$("aiEngine").onchange = () => {
+  pref("aiEngine", $("aiEngine").value);
+  const v = $("aiEngine").value;
+  if(v === "openai" && !pref("openaiKey")) toast("Wklej najpierw klucz OpenAI");
+  else if(v === "gemini" && !pref("geminiKey")) toast("Wklej najpierw klucz Gemini");
+  else toast("Zapisano");
+};
+$("oSave").onclick = async () => {
+  const k = $("oKey").value.trim();
+  pref("openaiKey", k || null); pref("openaiModel", null);
+  if(!k){ $("oStatus").textContent = "Klucz OpenAI usunięty."; return; }
+  $("oStatus").textContent = "⏳ Sprawdzam klucz…";
+  try{
+    const r = await openaiJSON(PROMPT + "recieve");
+    $("oStatus").innerHTML = `<span class="ok">✓ Działa (${esc(pref("openaiModel"))})!</span> Test: „recieve” → <b>${esc(r.en)}</b> – ${esc(r.pl)}`;
+  }catch(e){
+    $("oStatus").innerHTML = `<span class="bad">✗ Nie działa:</span> ${esc(e.message.slice(0,160))}`;
+  }
+};
 $("gSave").onclick = async () => {
   const k = $("gKey").value.trim();
   pref("geminiKey", k || null); pref("geminiModel", null);
   if(!k){ $("gStatus").textContent = "Klucz usunięty — działa wersja podstawowa."; return; }
   $("gStatus").textContent = "⏳ Sprawdzam klucz…";
   try{
-    const r = await gemini("recieve");
+    const r = await geminiJSON(PROMPT + "recieve", 0.2, SCHEMA_ADD);
     $("gStatus").innerHTML = `<span class="ok">✓ Działa!</span> Test: „recieve” → <b>${esc(r.en)}</b> [${esc(r.pron)}] – ${esc(r.pl)}`;
   }catch(e){
     $("gStatus").innerHTML = `<span class="bad">✗ Nie działa:</span> ${esc(e.message.slice(0,140))}`;
