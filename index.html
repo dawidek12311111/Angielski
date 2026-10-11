@@ -183,6 +183,22 @@
   .verdict.badBox{background:var(--danger-soft)}
   .big{font-size:2.4rem}
 
+  /* części mowy */
+  .pos{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px;margin:0 4px 0 0;vertical-align:middle;
+       color:var(--pc);background:color-mix(in srgb, var(--pc) 14%, transparent)}
+  .posRow{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+  .pos-n{--pc:#2563eb} .pos-v{--pc:#c2410c} .pos-adj{--pc:#7c3aed} .pos-adv{--pc:#0d9488}
+  .pos-phr{--pc:#b45309} .pos-idiom{--pc:#db2777} .pos-sent{--pc:#64748b} .pos-prep{--pc:#475569}
+  @media (prefers-color-scheme: dark){
+    .pos-n{--pc:#7aa7ff} .pos-v{--pc:#fb9a63} .pos-adj{--pc:#b79cff} .pos-adv{--pc:#4fd1c5}
+    .pos-phr{--pc:#f2b54a} .pos-idiom{--pc:#f58fc0} .pos-sent{--pc:#a3adbb} .pos-prep{--pc:#a3adbb}
+  }
+  .chip[class*="pos-"]{color:var(--pc)}
+  .chip[class*="pos-"].on{background:var(--pc);border-color:var(--pc);color:var(--card)}
+  .posPick .chip{padding:6px 11px;font-size:.82rem}
+  .forms{margin-top:4px;font-size:.88rem;color:var(--muted)}
+  .posFilter{margin:8px 0 4px}
+
   /* testy */
   .gear{width:36px;height:36px;padding:0;border-radius:50%;background:var(--card);border:1px solid var(--border);font-size:1.05rem}
   .gear.on{background:var(--accent);border-color:var(--accent)}
@@ -280,6 +296,13 @@
       <label for="pron">Wymowa (po polsku)</label>
       <input id="pron" autocomplete="off">
 
+      <label>Część mowy</label>
+      <div class="chips posPick" id="posPick"></div>
+      <div id="formsWrap" hidden>
+        <label for="forms">Formy czasownika (nieregularnego)</label>
+        <input id="forms" placeholder="np. dig – dug – dug" autocomplete="off">
+      </div>
+
       <label for="exEn">Przykładowe zdanie</label>
       <input id="exEn" placeholder="po angielsku" autocomplete="off">
       <input id="exPl" placeholder="po polsku" autocomplete="off" style="margin-top:6px">
@@ -300,6 +323,7 @@
       <button class="chip" data-f="todo">Do nauki</button>
       <button class="chip" data-f="known">Znam ✓</button>
     </div>
+    <div class="chips seg posFilter" id="posFilter"></div>
     <div class="sortRow">
       <div class="count" id="count"></div>
       <select id="sort" aria-label="Sortowanie">
@@ -320,6 +344,7 @@
       <button class="chip" data-m="all">Wszystkie</button>
       <button class="chip" id="dirBtn" style="margin-left:auto">EN → PL</button>
     </div>
+    <select id="learnPos" aria-label="Część mowy" style="width:100%;margin-bottom:10px"></select>
     <div id="learn"></div>
   </section>
 
@@ -358,6 +383,11 @@
         <button class="small" id="oSave">Zapisz</button>
       </div>
       <div class="status" id="oStatus"></div>
+    </div>
+
+    <div class="card">
+      <h2>🏷️ Części mowy</h2>
+      <div id="posBox"></div>
     </div>
 
     <div class="card">
@@ -430,6 +460,16 @@ function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("sho
 function esc(s){ return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function byId(id){ return items.find(i => i.id === id); }
 function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+/* ---------- części mowy ---------- */
+const POS = {
+  n:["rzeczownik","Rzeczowniki"], v:["czasownik","Czasowniki"], adj:["przymiotnik","Przymiotniki"], adv:["przysłówek","Przysłówki"],
+  phr:["phrasal verb","Phrasal verbs"], idiom:["zwrot","Zwroty"], sent:["zdanie","Zdania"], prep:["przyimek / spójnik","Inne"]
+};
+const POS_KEYS = Object.keys(POS);
+const posTags = it => (it.pos || []).filter(p => POS[p]).map(p => `<span class="pos pos-${p}">${POS[p][0]}</span>`).join("");
+const formsLine = it => it.forms ? `<div class="forms">🔁 ${esc(it.forms)}</div>` : "";
+const POS_SEED = {"headache":{"pos":["n"]},"puzzled":{"pos":["adj"]},"taken from real life":{"pos":["idiom"]},"based on real life":{"pos":["idiom"]},"sick leave":{"pos":["n"]},"In an hour, I start work.":{"pos":["sent"]},"hijack":{"pos":["v","n"]},"commodity":{"pos":["n"]},"scared":{"pos":["adj"]},"Bring it on!":{"pos":["idiom"],"forms":"bring – brought – brought"},"catch up on":{"pos":["phr"],"forms":"catch – caught – caught"},"scales":{"pos":["n"]},"The scales show I've lost 2 kilograms.":{"pos":["sent"]},"movie binge":{"pos":["n"]},"hailstorm":{"pos":["n"]},"acquaintance":{"pos":["n"]},"get on well":{"pos":["phr"],"forms":"get – got – got"},"see eye to eye":{"pos":["idiom"],"forms":"see – saw – seen"},"fall out with":{"pos":["phr"],"forms":"fall – fell – fallen"},"have an affair":{"pos":["idiom"],"forms":"have – had – had"},"make it up":{"pos":["phr"],"forms":"make – made – made"},"see each other":{"pos":["idiom"],"forms":"see – saw – seen"},"get together":{"pos":["phr"],"forms":"get – got – got"},"attachment":{"pos":["n"]},"She feels a deep attachment to her hometown.":{"pos":["sent"]},"self-esteem":{"pos":["n"]},"win over someone":{"pos":["phr"],"forms":"win – won – won"},"tidy":{"pos":["v","adj"]},"tedious":{"pos":["adj"]},"cliché":{"pos":["n"]},"loathe":{"pos":["v"]},"They visited us.":{"pos":["sent"]},"striving for success":{"pos":["idiom"]},"unremarkable":{"pos":["adj"]},"He lived an unremarkable life in a small town.":{"pos":["sent"]},"notwithstanding":{"pos":["prep"]},"caveat":{"pos":["n"]},"reluctant":{"pos":["adj"]},"inevitable":{"pos":["adj"]},"inevitably":{"pos":["adv"]},"justification":{"pos":["n"]},"vulnerable":{"pos":["adj"]},"withdraw":{"pos":["v"],"forms":"withdraw – withdrew – withdrawn"},"fulcrum":{"pos":["n"]},"equilibrium":{"pos":["n"]},"aftermath":{"pos":["n"]},"sever":{"pos":["v"]},"sullen":{"pos":["adj"]},"hallmark":{"pos":["n"]},"perverted":{"pos":["adj"]},"compulsively":{"pos":["adv"]},"ubiquitous":{"pos":["adj"]},"pernicious":{"pos":["adj"]},"ephemeral":{"pos":["adj"]},"eloquent":{"pos":["adj"]},"serendipity":{"pos":["n"]},"abstain":{"pos":["v"]},"premature":{"pos":["adj"]},"inflammation":{"pos":["n"]},"mould (UK) / mold (US)":{"pos":["n","v"]},"hunched shoulders":{"pos":["n"]},"demeanor":{"pos":["n"]},"radiant smile":{"pos":["n"]},"strode into":{"pos":["v"],"forms":"stride – strode – stridden"},"long haul":{"pos":["n","idiom"]},"relapsed":{"pos":["v"]},"soliloquies":{"pos":["n"]},"self-binding":{"pos":["n","adj"]},"prior":{"pos":["adj"]},"thereby":{"pos":["adv"]},"mitigate":{"pos":["v"]},"discount":{"pos":["n","v"]},"discounting":{"pos":["v"]},"whiz on":{"pos":["phr"]},"wrapped up":{"pos":["phr","adj"]},"He is completely wrapped up in his work.":{"pos":["sent"]},"reinforce":{"pos":["v"]},"teaspoonful":{"pos":["n"]},"bandage":{"pos":["n","v"]},"injections":{"pos":["n"]},"operation":{"pos":["n"]},"plaster":{"pos":["n"]},"tablets":{"pos":["n"]},"operate on":{"pos":["phr"]},"crutches":{"pos":["n"]},"spectacles":{"pos":["n"]},"vision":{"pos":["n"]},"wheelchairs":{"pos":["n"]},"general anaesthetic":{"pos":["n"]},"X-rays":{"pos":["n"]},"contact lenses":{"pos":["n"]},"manufactured":{"pos":["v","adj"]},"medical technology":{"pos":["n"]},"devices":{"pos":["n"]},"hearing aids":{"pos":["n"]},"pacemakers":{"pos":["n"]},"artificial hips":{"pos":["n"]},"prosthetic leg":{"pos":["n"]},"robotic arm":{"pos":["n"]},"laser surgery":{"pos":["n"]},"scanners":{"pos":["n"]},"blood pressure":{"pos":["n"]},"thermometers":{"pos":["n"]},"databases":{"pos":["n"]},"tools":{"pos":["n"]},"treat diseases":{"pos":["idiom"]},"keyhole surgery":{"pos":["n"]},"gibberish":{"pos":["n"]},"saliva":{"pos":["n"]},"heated seats":{"pos":["n"]},"severe":{"pos":["adj"]},"robe":{"pos":["n"]},"give a mean look":{"pos":["idiom"],"forms":"give – gave – given"},"get detention":{"pos":["idiom"],"forms":"get – got – got"},"get past":{"pos":["phr"],"forms":"get – got – got (US: gotten)"},"bladder":{"pos":["n"]},"frantically":{"pos":["adv"]},"suspicious":{"pos":["adj"]},"whisper":{"pos":["v","n"]},"terrified":{"pos":["adj"]},"brave":{"pos":["adj"]},"suddenly":{"pos":["adv"]},"realize":{"pos":["v"]},"avoid":{"pos":["v"]},"protect":{"pos":["v"]},"angry":{"pos":["adj"]},"secret":{"pos":["n","adj"]},"intimidating":{"pos":["adj"]},"furious":{"pos":["adj"]},"desperate":{"pos":["adj"]},"sneer":{"pos":["v","n"]},"mutter":{"pos":["v"]},"uneasy":{"pos":["adj"]},"stunned":{"pos":["adj"]},"reckless":{"pos":["adj"]},"overhear":{"pos":["v"],"forms":"overhear – overheard – overheard"},"janitor":{"pos":["n"]},"lethal amount":{"pos":["n"]},"indifferent":{"pos":["adj"]},"Strait of Hormuz":{"pos":["n"]},"installments":{"pos":["n"]},"slender":{"pos":["adj"]},"wandering":{"pos":["v","n"]},"smack lips":{"pos":["idiom"]},"rain pattering":{"pos":["n"]},"suspenders":{"pos":["n"]},"fleece":{"pos":["n"]},"convertible":{"pos":["n","adj"]},"decline":{"pos":["v","n"]},"burden":{"pos":["n"]},"hoisted me up":{"pos":["phr"]},"whacked":{"pos":["v","adj"]},"supervisor":{"pos":["n"]},"hooking up":{"pos":["phr"]},"meddle":{"pos":["v"]},"I don't like to meddle.":{"pos":["sent"]},"fainted":{"pos":["v"]},"goddess":{"pos":["n"]},"I can't help it.":{"pos":["sent","idiom"]},"jinxed":{"pos":["adj"]},"stutter":{"pos":["v","n"]},"badgering":{"pos":["v"]},"furl sail":{"pos":["idiom"]},"back astern":{"pos":["idiom"]},"neglected":{"pos":["adj"]},"orchard":{"pos":["n"]},"jeopardize":{"pos":["v"]},"equity":{"pos":["n"]},"bizarre":{"pos":["adj"]},"banished":{"pos":["v","adj"]},"superstitious":{"pos":["adj"]},"abducted":{"pos":["v","adj"]},"on the house":{"pos":["idiom"]},"crowbar":{"pos":["n"]},"dug up":{"pos":["phr"],"forms":"dig – dug – dug"},"put money into it":{"pos":["idiom"],"forms":"put – put – put"},"get fed":{"pos":["idiom"],"forms":"feed – fed – fed"},"bombs away":{"pos":["idiom"]},"interstate":{"pos":["n","adj"]},"bolting":{"pos":["v"]},"clamoring":{"pos":["v"]},"onlookers":{"pos":["n"]},"shivers":{"pos":["n"]},"object rattling":{"pos":["n"]},"yelping":{"pos":["v"]},"rascal":{"pos":["n"]},"christening":{"pos":["n"]},"godfather":{"pos":["n"]},"viscosity":{"pos":["n"]},"The sink drain is clogged.":{"pos":["sent"]},"Water is leaking from the drainpipe under the sink.":{"pos":["sent"]},"twinkling":{"pos":["v","adj"]},"wavelength":{"pos":["n"]},"glaciologist":{"pos":["n"]},"tartan":{"pos":["n"]},"gangly":{"pos":["adj"]},"juxtaposition":{"pos":["n"]},"sertraline":{"pos":["n"]},"corduroy":{"pos":["n"]},"pinafore dress":{"pos":["n"]},"superfluous":{"pos":["adj"]},"captivating":{"pos":["adj"]},"depressing":{"pos":["adj"]},"You've read that, haven't you?":{"pos":["sent"]},"keen on":{"pos":["adj","idiom"]},"I'm keen on hiking.":{"pos":["sent"]},"Resubmit the form?":{"pos":["sent"]},"windmills":{"pos":["n"]},"rainy day":{"pos":["n","idiom"]}};
+
 function readLocal(){ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY)) || []; }catch(e){ return []; } }
 
 /* ================= MAGAZYN: Firebase albo (awaryjnie) to urządzenie ================= */
@@ -444,6 +484,18 @@ const store = {
     const it = byId(id), m = Math.max(0, (it && it.miss || 0) - 1);
     if(cloud) return updateDoc(doc(col, id), { miss: m, known: true });
     it.miss = m; it.known = true; saveLocal();
+  },
+  async bulkUpdate(pairs){
+    if(cloud){
+      for(let i = 0; i < pairs.length; i += 400){
+        const b = writeBatch(db);
+        pairs.slice(i, i + 400).forEach(([id, data]) => b.update(doc(col, id), data));
+        await b.commit();
+      }
+      return;
+    }
+    pairs.forEach(([id, data]) => { const it = byId(id); if(it) Object.assign(it, data); });
+    saveLocal();
   },
   async remove(id){ if(cloud) return deleteDoc(doc(col, id)); items = items.filter(i => i.id !== id); saveLocal(); },
   async bulk(list){
@@ -462,10 +514,19 @@ const store = {
 function clean(it){
   return { en:it.en||"", pl:it.pl||"", pron:it.pron||"", exEn:it.exEn||"", exPl:it.exPl||"",
            known:!!it.known, miss:it.miss||0, added:it.added || new Date().toISOString(),
+           pos: Array.isArray(it.pos) ? it.pos : [], forms: it.forms || "",
            ...(it.more ? { more: it.more } : {}) };
 }
 function saveLocal(){ try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(items)); }catch(e){ toast("Nie udało się zapisać"); } dataChanged(); }
 function fail(e){ console.error(e); toast(/permission/i.test(e && e.message) ? "Baza odmówiła dostępu (reguły Firestore)" : "Błąd zapisu w bazie"); }
+
+const seedTried = new Set();
+function seedPos(){
+  const todo = items.filter(i => !seedTried.has(i.id) && !(i.pos && i.pos.length) && POS_SEED[i.en]);
+  if(!todo.length) return;
+  todo.forEach(i => seedTried.add(i.id));
+  store.bulkUpdate(todo.map(i => [i.id, { pos: POS_SEED[i.en].pos, forms: POS_SEED[i.en].forms || "" }])).catch(e => console.warn(e));
+}
 
 function sortItems(){ items.sort((a,b) => (b.added||"").localeCompare(a.added||"") || a.id.localeCompare(b.id)); }
 
@@ -491,6 +552,7 @@ function startStorage(){
       sortItems();
       $("dbBadge").textContent = "☁️ baza";
       dataChanged();
+      seedPos();
     }, err => { console.error(err); $("dbBadge").textContent = "⚠️ brak bazy"; toast("Nie mogę połączyć z bazą"); });
   } else {
     items = readLocal();
@@ -498,6 +560,7 @@ function startStorage(){
     try{ xdocs = JSON.parse(localStorage.getItem("moj-angielski-x")) || {}; }catch(e){ xdocs = {}; }
     $("dbBadge").textContent = "📱 lokalnie";
     dataChanged();
+    seedPos();
   }
 }
 
@@ -549,6 +612,8 @@ Zwróć WYŁĄCZNIE obiekt JSON z polami:
 - "pron": brytyjska wymowa całego "en" zapisana polskimi literami, tak jak przeczytałby ją Polak, bez IPA i bez akcentów. Przykłady: "headache" → "hedejk", "I would like a coffee" → "aj łud lajk e kofi", "thought" → "fot", "the" → "de", "whisper" → "łysper".
 - "exEn": jeśli wpis to słowo lub krótki zwrot – jedno proste, naturalne zdanie przykładowe z nim; jeśli wpis to całe zdanie – "".
 - "exPl": tłumaczenie exEn na polski albo "".
+- "pos": lista części mowy dla "en" (główna jako pierwsza), wybierz z kluczy: "n" rzeczownik, "v" czasownik, "adj" przymiotnik, "adv" przysłówek, "phr" phrasal verb, "idiom" zwrot/wyrażenie, "sent" całe zdanie, "prep" przyimek lub spójnik. Słowo o kilku rolach dostaje kilka kluczy, np. "decline" → ["v","n"].
+- "forms": jeśli "en" to czasownik nieregularny albo phrasal verb / zwrot z czasownikiem nieregularnym — trzy formy tego czasownika, np. "dig – dug – dug"; w każdym innym przypadku "".
 Wpis: `;
 
 /* Schematy odpowiedzi — Gemini musi odpowiedzieć dokładnie w tym kształcie (koniec z zepsutym JSON-em) */
@@ -557,9 +622,11 @@ const T = {
   arr: (items) => ({ type:"ARRAY", items }),
   obj: (props, req) => ({ type:"OBJECT", properties: props, required: req || Object.keys(props) })
 };
-const SCHEMA_ADD = T.obj({ en:T.s, fixed:T.b, note:T.s, pl:T.s, pron:T.s, exEn:T.s, exPl:T.s });
+const T_POS = T.arr({ type:"STRING", enum:["n","v","adj","adv","phr","idiom","sent","prep"] });
+const SCHEMA_ADD = T.obj({ en:T.s, fixed:T.b, note:T.s, pl:T.s, pron:T.s, exEn:T.s, exPl:T.s, pos:T_POS, forms:T.s });
+const SCHEMA_POSB = T.obj({ wyniki: T.arr(T.obj({ i:T.i, pos:T_POS, forms:T.s })) });
 const SCHEMA_MORE = T.obj({
-  znaczenia: T.arr(T.obj({ pl:T.s, kiedy:T.s })), rejestr:T.s, ciekawostka:T.s,
+  znaczenia: T.arr(T.obj({ pl:T.s, kiedy:T.s })), rejestr:T.s, ciekawostka:T.s, rodzina: T.arr(T.obj({ en:T.s, pos:T.s, pl:T.s })),
   przyklady: T.arr(T.obj({ en:T.s, pl:T.s, pron:T.s })),
   kolokacje: T.arr(T.s), synonimy: T.arr(T.s), przeciwienstwa: T.arr(T.s), uwaga:T.s
 });
@@ -761,7 +828,19 @@ async function freeFill(text){
 }
 
 /* ================= AUTOMATYCZNE UZUPEŁNIANIE ================= */
-const FIELDS = ["pl","pron","exEn","exPl"];
+const FIELDS = ["pl","pron","exEn","exPl","forms"];
+let formPos = [], posTouched = false;
+function renderPosPick(){
+  $("posPick").innerHTML = POS_KEYS.map(k => `<button type="button" class="chip pos-${k} ${formPos.includes(k) ? "on" : ""}" data-p="${k}">${POS[k][0]}</button>`).join("");
+  $("formsWrap").hidden = !(formPos.includes("v") || formPos.includes("phr") || $("forms").value.trim());
+}
+$("posPick").onclick = e => {
+  const b = e.target.closest("[data-p]"); if(!b) return;
+  const k = b.dataset.p;
+  formPos = formPos.includes(k) ? formPos.filter(x => x !== k) : [...formPos, k];
+  posTouched = true; renderPosPick();
+};
+renderPosPick();
 let autoFilled = {}, autoSeq = 0, autoTimer = null, lastAutoText = "";
 
 function fillable(f){ return !$(f).value.trim() || autoFilled[f]; }
@@ -811,6 +890,10 @@ async function autoFill(force){
   setAuto("pron", r.pron, force);
   setAuto("exEn", r.exEn, force);
   setAuto("exPl", r.exPl, force);
+  setAuto("forms", r.forms, force);
+  if(Array.isArray(r.pos) && r.pos.length && (force || !posTouched)){ formPos = r.pos.filter(p => POS[p]); }
+  else if(!formPos.length && !posTouched && /\s/.test(text) && /[.!?]$/.test(text)) formPos = ["sent"];
+  renderPosPick();
   $("autoStatus").textContent = via === "gemini"
     ? "✓ Gotowe — sprawdź i zapisz."
     : (r.pl ? "✓ Uzupełnione (wersja podstawowa) — sprawdź i zapisz." : "Nie udało się przetłumaczyć — wpisz ręcznie.");
@@ -826,6 +909,7 @@ $("refill").onclick = () => { clearTimeout(autoTimer); autoFill(true); };
 
 /* ================= DODAJ / EDYTUJ ================= */
 function clearForm(){
+  formPos = []; posTouched = false; setTimeout(renderPosPick);
   ["en", ...FIELDS].forEach(f => $(f).value = "");
   autoFilled = {}; autoSeq++; lastAutoText = "";
   editingId = null; $("save").textContent = "Zapisz"; $("cancel").style.display = "none";
@@ -835,7 +919,7 @@ $("save").onclick = async () => {
   const v = f => $(f).value.trim();
   const en = v("en");
   if(!en){ toast("Wpisz coś po angielsku"); $("en").focus(); return; }
-  const data = { en, pl:v("pl"), pron:v("pron"), exEn:v("exEn"), exPl:v("exPl") };
+  const data = { en, pl:v("pl"), pron:v("pron"), exEn:v("exEn"), exPl:v("exPl"), pos: formPos.slice(), forms: v("forms") };
   $("save").disabled = true;
   try{
     if(editingId){
@@ -856,7 +940,11 @@ $("speakInput").onclick = () => speak($("en").value.trim());
 $("exPl").addEventListener("keydown", e => { if(e.key === "Enter") $("save").click(); });
 
 /* ================= LISTA ================= */
-let listFilter = "all";
+let listFilter = "all", listPos = pref("listPos") || "all";
+$("posFilter").onclick = e => {
+  const b = e.target.closest("[data-pf]"); if(!b) return;
+  listPos = b.dataset.pf; pref("listPos", listPos); renderList();
+};
 $("listFilter").onclick = e => {
   const b = e.target.closest(".chip"); if(!b) return;
   listFilter = b.dataset.f;
@@ -869,8 +957,15 @@ $("sort").onchange = () => { pref("sort", $("sort").value); renderList(); };
 
 function renderList(){
   const q = $("search").value.trim().toLowerCase();
-  const shown = items.filter(i =>
-    (listFilter === "all" || (listFilter === "known") === !!i.known) &&
+  const base = items.filter(i => listFilter === "all" || (listFilter === "known") === !!i.known);
+  const cnt = {}; base.forEach(i => (i.pos || []).forEach(p => cnt[p] = (cnt[p] || 0) + 1));
+  const noPos = base.filter(i => !(i.pos && i.pos.length)).length;
+  if(listPos !== "all" && listPos !== "none" && !cnt[listPos]) listPos = "all";
+  $("posFilter").innerHTML = `<button class="chip ${listPos === "all" ? "on" : ""}" data-pf="all">🏷️ Wszystkie</button>` +
+    POS_KEYS.filter(k => cnt[k]).map(k => `<button class="chip pos-${k} ${listPos === k ? "on" : ""}" data-pf="${k}">${POS[k][1]} <em>${cnt[k]}</em></button>`).join("") +
+    (noPos ? `<button class="chip ${listPos === "none" ? "on" : ""}" data-pf="none">Bez oznaczenia <em>${noPos}</em></button>` : "");
+  const shown = base.filter(i =>
+    (listPos === "all" || (listPos === "none" ? !(i.pos && i.pos.length) : (i.pos || []).includes(listPos))) &&
     (!q || [i.en,i.pl,i.pron,i.exEn,i.exPl].some(f => (f||"").toLowerCase().includes(q))));
   const s = $("sort").value;
   const byNew = (a,b) => (b.added||"").localeCompare(a.added||"") || b.id.localeCompare(a.id);
@@ -884,8 +979,10 @@ function renderList(){
   $("list").innerHTML = shown.map(i => `
     <div class="item ${i.known ? "known" : ""}">
       <div class="en">${esc(i.en)}${i.miss ? `<span class="miss" title="Ile razy nie wiedziałeś">✗ ${i.miss}</span>` : ""}</div>
+      ${i.pos && i.pos.length ? `<div class="posRow">${posTags(i)}</div>` : ""}
       ${i.pl ? `<div class="pl">${esc(i.pl)}</div>` : ""}
       ${i.pron ? `<div class="pron">${esc(i.pron)}</div>` : ""}
+      ${formsLine(i)}
       ${i.exEn ? `<div class="ex"><div>${esc(i.exEn)}</div>${i.exPl ? `<div class="exPl">${esc(i.exPl)}</div>` : ""}</div>` : ""}
       <div class="actions">
         <button class="small knownBtn ${i.known ? "on" : ""}" data-known="${i.id}">${i.known ? "✓ Znam" : "Znam?"}</button>
@@ -908,6 +1005,7 @@ $("list").onclick = e => {
   if(d.edit){
     const it = byId(d.edit);
     $("en").value = it.en; FIELDS.forEach(f => $(f).value = it[f] || "");
+    formPos = (it.pos || []).slice(); posTouched = true; renderPosPick();
     autoFilled = {}; editingId = it.id; lastAutoText = it.en; $("fixBox").innerHTML = "";
     $("save").textContent = "Zapisz zmiany"; $("cancel").style.display = "block";
     showTab("add");
@@ -936,16 +1034,27 @@ $("learnMode").onclick = e => {
   $("learnMode").querySelectorAll(".chip[data-m]").forEach(c => c.classList.toggle("on", c === b));
   startDeck();
 };
+let learnPos = pref("learnPos") || "all";
+$("learnPos").onchange = () => { learnPos = $("learnPos").value; pref("learnPos", learnPos); startDeck(); };
+function fillLearnPos(){
+  const cnt = {}; items.forEach(i => (i.pos || []).forEach(p => cnt[p] = (cnt[p] || 0) + 1));
+  $("learnPos").innerHTML = `<option value="all">Wszystkie części mowy</option>` +
+    POS_KEYS.filter(k => cnt[k]).map(k => `<option value="${k}">Tylko: ${POS[k][1].toLowerCase()} (${cnt[k]})</option>`).join("");
+  if(![...$("learnPos").options].some(o => o.value === learnPos)) learnPos = "all";
+  $("learnPos").value = learnPos;
+}
 function startDeck(){
+  fillLearnPos();
   if(learnMode === "hard"){
-    deck = items.filter(i => i.miss > 0).sort((a,b) => b.miss - a.miss).slice(0, 20).map(i => i.id);
+    deck = items.filter(i => i.miss > 0 && posOk(i)).sort((a,b) => b.miss - a.miss).slice(0, 20).map(i => i.id);
   } else {
-    deck = items.filter(i => learnMode === "all" || !i.known).map(i => i.id);
+    deck = items.filter(i => (learnMode === "all" || !i.known) && posOk(i)).map(i => i.id);
   }
   for(let i = deck.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [deck[i],deck[j]] = [deck[j],deck[i]]; }
   pos = 0; revealed = false; answers = {};
   renderCard();
 }
+function posOk(i){ return learnPos === "all" || (i.pos || []).includes(learnPos); }
 function roundScore(){
   const v = Object.values(answers);
   return { yes: v.filter(x => x).length, no: v.filter(x => !x).length };
@@ -997,7 +1106,9 @@ function renderCard(){
       ${revealed ? `
         <div class="answer">
           <div class="big">${esc(back)}</div>
+          ${it.pos && it.pos.length ? `<div class="posRow" style="justify-content:center">${posTags(it)}</div>` : ""}
           ${it.pron ? `<div class="pron">${esc(it.pron)}</div>` : ""}
+          ${formsLine(it)}
           ${it.exEn ? `<div class="ex"><div>${esc(it.exEn)}</div>${it.exPl ? `<div class="exPl">${esc(it.exPl)}</div>` : ""}</div>` : ""}
         </div>` : `<div class="hint">Stuknij, żeby zobaczyć odpowiedź · przesuń w bok, żeby przejść dalej</div>`}
     </div>
@@ -1062,7 +1173,9 @@ Zwróć WYŁĄCZNIE obiekt JSON:
  "synonimy":["..."],
  "przeciwienstwa":["..."],
  "uwaga":"typowy błąd Polaków albo fałszywy przyjaciel; pusty string, jeśli nie ma",
- "rejestr":"potoczne / neutralne / formalne / slang + krótki komentarz po polsku"}
+ "rejestr":"potoczne / neutralne / formalne / slang + krótki komentarz po polsku",
+ "rodzina":[{"en":"inne słowo z tej samej rodziny wyrazów","pos":"n / v / adj / adv","pl":"tłumaczenie"}]}
+Rodzina słowa: inne części mowy od tego samego rdzenia (np. dla "decide": decision n, decisive adj, decisively adv, indecisive adj); bez samego wpisu; do 6 pozycji; pusta lista dla całych zdań albo gdy nie ma sensownej rodziny.
 Zasady: 1–4 znaczenia, dokładnie 5 przykładów z różnych sytuacji z życia (praca, dom, znajomi, filmy), do 6 kolokacji, do 5 synonimów i przeciwieństw (puste listy, jeśli nie ma sensu).
 Jeśli wpis to całe zdanie: w "znaczenia" wyjaśnij jego sens i użytą konstrukcję gramatyczną, w "kolokacje" daj przydatne zwroty z tego zdania, a przykłady niech pokazują tę samą konstrukcję.`;
 
@@ -1113,6 +1226,12 @@ function renderMore(it, m){
         <div style="flex:1"><div>${esc(x.en)}</div><div class="exPl">${esc(x.pl)}</div>${x.pron ? `<div class="pron small">${esc(x.pron)}</div>` : ""}</div>
         <div class="exBtns"><button class="small" data-say="${i}">🔊</button><button class="small" data-addex="${i}" title="Dodaj do moich słówek">＋</button></div>
       </div>`).join("")}` : ""}
+    ${list(m.rodzina).length ? `<h3>Rodzina słowa</h3>${list(m.rodzina).map((x, i) => `
+      <div class="exRow">
+        <div style="flex:1"><b>${esc(x.en)}</b> ${POS[x.pos] ? `<span class="pos pos-${x.pos}">${POS[x.pos][0]}</span>` : ""}<div class="exPl">${esc(x.pl)}</div></div>
+        <div class="exBtns"><button class="small" data-fsay="${i}">🔊</button><button class="small" data-fam="${i}" title="Dodaj do moich słówek">＋</button></div>
+      </div>`).join("")}`
+      : (m.rodzina === undefined && it.en.trim().split(/\s+/).length <= 3 ? `<button class="ghost small wide" id="moreFam">🌳 Pokaż rodzinę słowa (odśwież)</button>` : "")}
     ${list(m.kolokacje).length ? `<h3>Typowe połączenia</h3><div class="tags">${tags(m.kolokacje)}</div>` : ""}
     ${list(m.synonimy).length ? `<h3>Synonimy</h3><div class="tags">${tags(m.synonimy)}</div>` : ""}
     ${list(m.przeciwienstwa).length ? `<h3>Przeciwieństwa</h3><div class="tags">${tags(m.przeciwienstwa)}</div>` : ""}
@@ -1124,10 +1243,20 @@ function renderMore(it, m){
     const x = ex[+b.dataset.addex];
     if(items.some(i => i.en.toLowerCase() === x.en.toLowerCase())){ toast("To zdanie już masz"); return; }
     b.disabled = true; b.textContent = "✓";
-    try{ await store.add({ id:newId(), en:x.en, pl:x.pl, pron:x.pron||"", exEn:"", exPl:"", known:false, miss:0, added:new Date().toISOString() }); toast("Dodano do słówek"); }
+    try{ await store.add({ id:newId(), en:x.en, pl:x.pl, pron:x.pron||"", exEn:"", exPl:"", pos:["sent"], forms:"", known:false, miss:0, added:new Date().toISOString() }); toast("Dodano do słówek"); }
     catch(e){ fail(e); }
   });
   $("moreAgain").onclick = () => openMore(it.id, true);
+  if($("moreFam")) $("moreFam").onclick = () => openMore(it.id, true);
+  const fam = list(m.rodzina);
+  $("sheetBody").querySelectorAll("[data-fsay]").forEach(b => b.onclick = () => speak(fam[+b.dataset.fsay].en));
+  $("sheetBody").querySelectorAll("[data-fam]").forEach(b => b.onclick = async () => {
+    const x = fam[+b.dataset.fam];
+    if(items.some(i => i.en.toLowerCase() === x.en.toLowerCase())){ toast("To słowo już masz"); return; }
+    b.disabled = true; b.textContent = "✓";
+    try{ await store.add({ id:newId(), en:x.en, pl:x.pl, pron:"", exEn:"", exPl:"", pos: POS[x.pos] ? [x.pos] : [], forms:"", known:false, miss:0, added:new Date().toISOString() }); toast("Dodano do słówek"); }
+    catch(e){ fail(e); }
+  });
 }
 function closeMore(){
   moreId = null;
@@ -2026,8 +2155,41 @@ $("gSave").onclick = async () => {
   }
 };
 
+function renderPosBox(){
+  const miss = items.filter(i => !(i.pos && i.pos.length));
+  $("posBox").innerHTML = miss.length
+    ? `<p>${miss.length} słówek nie ma jeszcze oznaczonej części mowy. AI uzupełni je paczkami po 50 (1 zapytanie na paczkę).</p>
+       <button class="primary wide" id="posFill">🏷️ Uzupełnij brakujące (${miss.length})</button><div class="status" id="posStatus"></div>`
+    : `<p class="ok">✓ Wszystkie słówka mają oznaczoną część mowy.</p>`;
+  if($("posFill")) $("posFill").onclick = () => fillPos(miss);
+}
+async function fillPos(list){
+  if(!hasAI()){ toast("Dodaj klucz AI powyżej"); return; }
+  $("posFill").disabled = true;
+  let done = 0;
+  try{
+    for(let s = 0; s < list.length; s += 50){
+      const part = list.slice(s, s + 50);
+      $("posStatus").textContent = `⏳ ${done}/${list.length}…`;
+      const r = await aiJSON(`Dla każdego wpisu (angielskie słowo, zwrot albo zdanie) podaj części mowy i — dla czasowników nieregularnych — trzy formy.
+Klucze części mowy: "n" rzeczownik, "v" czasownik, "adj" przymiotnik, "adv" przysłówek, "phr" phrasal verb, "idiom" zwrot/wyrażenie, "sent" całe zdanie, "prep" przyimek lub spójnik. Główna jako pierwsza; słowo o kilku rolach dostaje kilka kluczy.
+"forms": dla czasownika nieregularnego albo zwrotu z nim, np. "dig – dug – dug"; inaczej "".
+Zwróć WYŁĄCZNIE JSON {"wyniki":[{"i":numer,"pos":["…"],"forms":""}]} — po jednym dla każdego wpisu.
+Wpisy:
+${part.map((it, k) => `${k}. ${it.en}${it.pl ? " (" + it.pl + ")" : ""}`).join("\n")}`, 0.1, SCHEMA_POSB);
+      const pairs = (r.wyniki || []).filter(w => part[w.i] && Array.isArray(w.pos))
+        .map(w => [part[w.i].id, { pos: w.pos.filter(p => POS[p]), forms: w.forms || "" }]).filter(p => p[1].pos.length);
+      if(pairs.length) await store.bulkUpdate(pairs);
+      done += part.length;
+    }
+    toast("Uzupełniono części mowy");
+  }catch(e){ if($("posStatus")) $("posStatus").innerHTML = `<span class="bad">${esc(e.message === "NOKEY" ? "Brak klucza AI" : e.message)}</span>`; }
+  renderPosBox();
+}
+
 function renderSettings(){
   renderInstall();
+  renderPosBox();
   if(cloud){
     $("dbInfo").innerHTML = `Połączono z Firebase (<b>${esc(firebaseConfig.projectId)}</b>, kolekcja „${COLLECTION}”). Słówka są te same na każdym urządzeniu.`;
     const local = readLocal();
