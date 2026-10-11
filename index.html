@@ -107,6 +107,11 @@
   .flash .ex{text-align:left;margin-top:12px}
   .progress{display:flex;justify-content:space-between;color:var(--muted);font-size:.85rem;margin-bottom:8px}
   .answerBtns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .answerBtns.three{grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .answerBtns.three button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;font-size:1.1rem}
+  .answerBtns.three span{font-size:.82rem}
+  .mid{background:#fdebd3;color:#b45309}
+  @media (prefers-color-scheme: dark){ .mid{background:#3d2a12;color:#f5a54a} }
   .answerBtns button{padding:14px}
   .no{background:var(--danger-soft);color:var(--danger)}
   .yes{background:var(--good-soft);color:var(--good)}
@@ -182,6 +187,27 @@
   .verdict.good{background:var(--good-soft)}
   .verdict.badBox{background:var(--danger-soft)}
   .big{font-size:2.4rem}
+
+  /* obrazki */
+  .itemTop{display:flex;gap:12px;align-items:flex-start}
+  .itemMain{flex:1;min-width:0}
+  .thumb{position:relative;flex:none;width:68px;height:68px;border-radius:14px;overflow:hidden;padding:0;background:var(--accent-soft);display:grid;place-items:center}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb span{position:absolute;right:3px;bottom:2px;font-size:1rem;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
+  .thumb.broken img{display:none} .thumb.broken span{position:static;font-size:2rem}
+  .thumb.emo{font-size:2.1rem;background:var(--bg);border:1px solid var(--border)}
+  .flashImg{margin:0 auto 12px;max-width:320px}
+  .flashImg img{width:100%;max-height:180px;object-fit:cover;border-radius:14px;display:block}
+  .flashEmo{font-size:3rem;line-height:1;margin-bottom:8px}
+  .credit{display:block;font-size:.68rem;color:var(--muted);text-decoration:none;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .moreImg img{width:100%;max-height:240px;object-fit:cover;border-radius:16px;display:block;background:var(--accent-soft)}
+  .moreEmo{font-size:2.6rem}
+  .imgGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+  .imgGrid button{padding:0;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--accent-soft)}
+  .imgGrid img{width:100%;height:100%;object-fit:cover;display:block}
+  .montage{position:relative}
+  .montage::before{content:"";position:fixed;inset:0;background:var(--mbg, none) center/cover no-repeat;opacity:.28;filter:blur(2px) saturate(.9);z-index:-1;transition:background-image .4s}
+  .mEmo{font-style:normal;font-size:4rem;line-height:1}
 
   /* części mowy */
   .pos{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px;margin:0 4px 0 0;vertical-align:middle;
@@ -377,6 +403,8 @@
 
       <label>Część mowy</label>
       <div class="chips posPick" id="posPick"></div>
+      <label for="emoji">Emoji (obrazek)</label>
+      <input id="emoji" placeholder="np. 🍎" autocomplete="off" style="max-width:140px;font-size:1.3rem">
       <div id="formsWrap" hidden>
         <label for="forms">Formy czasownika (nieregularnego)</label>
         <input id="forms" placeholder="np. dig – dug – dug" autocomplete="off">
@@ -547,6 +575,7 @@ const POS = {
 const POS_KEYS = Object.keys(POS);
 const posTags = it => (it.pos || []).filter(p => POS[p]).map(p => `<span class="pos pos-${p}">${POS[p][0]}</span>`).join("");
 const formsLine = it => it.forms ? `<div class="forms">🔁 ${esc(it.forms)}</div>` : "";
+const MEDIA_SEED = {"headache":{"emoji":"🤕","foto":"headache"},"puzzled":{"emoji":"🤔","foto":"puzzled face"},"taken from real life":{"emoji":"🎞️","foto":""},"based on real life":{"emoji":"📖","foto":""},"sick leave":{"emoji":"🤒","foto":""},"In an hour, I start work.":{"emoji":"⏰","foto":""},"hijack":{"emoji":"✈️","foto":"hijacked plane"},"commodity":{"emoji":"📦","foto":"commodities market"},"scared":{"emoji":"😨","foto":"scared face"},"Bring it on!":{"emoji":"💪","foto":""},"catch up on":{"emoji":"📚","foto":""},"scales":{"emoji":"⚖️","foto":"bathroom scale"},"The scales show I've lost 2 kilograms.":{"emoji":"⚖️","foto":""},"movie binge":{"emoji":"🍿","foto":"popcorn movie night"},"hailstorm":{"emoji":"🌨️","foto":"hailstorm"},"acquaintance":{"emoji":"🤝","foto":""},"get on well":{"emoji":"😊","foto":""},"see eye to eye":{"emoji":"👀","foto":""},"fall out with":{"emoji":"😤","foto":""},"have an affair":{"emoji":"💔","foto":""},"make it up":{"emoji":"🫂","foto":""},"see each other":{"emoji":"💑","foto":""},"get together":{"emoji":"💞","foto":""},"attachment":{"emoji":"📎","foto":"paper clip"},"She feels a deep attachment to her hometown.":{"emoji":"🏡","foto":""},"self-esteem":{"emoji":"🪞","foto":""},"win over someone":{"emoji":"🏆","foto":""},"tidy":{"emoji":"🧹","foto":"tidy desk"},"tedious":{"emoji":"🥱","foto":""},"cliché":{"emoji":"🗯️","foto":""},"loathe":{"emoji":"🤢","foto":""},"They visited us.":{"emoji":"🚪","foto":""},"striving for success":{"emoji":"🧗","foto":""},"unremarkable":{"emoji":"😐","foto":""},"He lived an unremarkable life in a small town.":{"emoji":"🏘️","foto":""},"notwithstanding":{"emoji":"↔️","foto":""},"caveat":{"emoji":"⚠️","foto":""},"reluctant":{"emoji":"😒","foto":""},"inevitable":{"emoji":"⏳","foto":""},"inevitably":{"emoji":"⏳","foto":""},"justification":{"emoji":"🧾","foto":""},"vulnerable":{"emoji":"🥺","foto":""},"withdraw":{"emoji":"🏧","foto":"cash machine"},"fulcrum":{"emoji":"⚖️","foto":"lever fulcrum"},"equilibrium":{"emoji":"☯️","foto":""},"aftermath":{"emoji":"🏚️","foto":"earthquake aftermath"},"sever":{"emoji":"✂️","foto":""},"sullen":{"emoji":"😠","foto":""},"hallmark":{"emoji":"🔖","foto":""},"perverted":{"emoji":"😈","foto":""},"compulsively":{"emoji":"🔁","foto":""},"ubiquitous":{"emoji":"🌐","foto":""},"pernicious":{"emoji":"☠️","foto":""},"ephemeral":{"emoji":"🫧","foto":"soap bubble"},"eloquent":{"emoji":"🎤","foto":""},"serendipity":{"emoji":"🍀","foto":""},"abstain":{"emoji":"🙅","foto":""},"premature":{"emoji":"⏩","foto":""},"inflammation":{"emoji":"🔥","foto":""},"mould (UK) / mold (US)":{"emoji":"🦠","foto":"mold bread"},"hunched shoulders":{"emoji":"🧍","foto":"hunched man"},"demeanor":{"emoji":"🧘","foto":""},"radiant smile":{"emoji":"😁","foto":"smiling woman"},"strode into":{"emoji":"🚶","foto":""},"long haul":{"emoji":"🛣️","foto":""},"relapsed":{"emoji":"↩️","foto":""},"soliloquies":{"emoji":"🎭","foto":"theatre stage actor"},"self-binding":{"emoji":"⛓️","foto":""},"prior":{"emoji":"⏮️","foto":""},"thereby":{"emoji":"➡️","foto":""},"mitigate":{"emoji":"🛡️","foto":""},"discount":{"emoji":"🏷️","foto":"sale discount"},"discounting":{"emoji":"🏷️","foto":""},"whiz on":{"emoji":"🗣️","foto":""},"wrapped up":{"emoji":"🎁","foto":"wrapped gift"},"He is completely wrapped up in his work.":{"emoji":"💼","foto":""},"reinforce":{"emoji":"🧱","foto":""},"teaspoonful":{"emoji":"🥄","foto":"teaspoon"},"bandage":{"emoji":"🩹","foto":"bandage"},"injections":{"emoji":"💉","foto":"syringe injection"},"operation":{"emoji":"🏥","foto":"surgery operating room"},"plaster":{"emoji":"🦴","foto":"leg cast"},"tablets":{"emoji":"💊","foto":"pills tablets"},"operate on":{"emoji":"🩺","foto":""},"crutches":{"emoji":"🩼","foto":"crutches"},"spectacles":{"emoji":"👓","foto":"eyeglasses"},"vision":{"emoji":"👁️","foto":"eye"},"wheelchairs":{"emoji":"♿","foto":"wheelchair"},"general anaesthetic":{"emoji":"😴","foto":""},"X-rays":{"emoji":"🩻","foto":"x-ray"},"contact lenses":{"emoji":"👁️","foto":"contact lens"},"manufactured":{"emoji":"🏭","foto":"factory"},"medical technology":{"emoji":"🔬","foto":""},"devices":{"emoji":"📱","foto":"electronic devices"},"hearing aids":{"emoji":"🦻","foto":"hearing aid"},"pacemakers":{"emoji":"❤️","foto":"pacemaker"},"artificial hips":{"emoji":"🦴","foto":"hip replacement"},"prosthetic leg":{"emoji":"🦿","foto":"prosthetic leg"},"robotic arm":{"emoji":"🦾","foto":"robotic arm"},"laser surgery":{"emoji":"🔦","foto":""},"scanners":{"emoji":"🖨️","foto":"mri scanner"},"blood pressure":{"emoji":"🩸","foto":"blood pressure monitor"},"thermometers":{"emoji":"🌡️","foto":"thermometer"},"databases":{"emoji":"🗄️","foto":"server room"},"tools":{"emoji":"🧰","foto":"tools"},"treat diseases":{"emoji":"💊","foto":""},"keyhole surgery":{"emoji":"🔬","foto":"laparoscopic surgery"},"gibberish":{"emoji":"🤪","foto":""},"saliva":{"emoji":"💧","foto":""},"heated seats":{"emoji":"💺","foto":"car seats"},"severe":{"emoji":"🥶","foto":""},"robe":{"emoji":"👘","foto":"bathrobe"},"give a mean look":{"emoji":"😒","foto":""},"get detention":{"emoji":"🏫","foto":""},"get past":{"emoji":"🚧","foto":""},"bladder":{"emoji":"🫧","foto":""},"frantically":{"emoji":"😱","foto":""},"suspicious":{"emoji":"🕵️","foto":""},"whisper":{"emoji":"🤫","foto":""},"terrified":{"emoji":"😱","foto":""},"brave":{"emoji":"🦁","foto":""},"suddenly":{"emoji":"⚡","foto":""},"realize":{"emoji":"💡","foto":""},"avoid":{"emoji":"🚫","foto":""},"protect":{"emoji":"🛡️","foto":""},"angry":{"emoji":"😠","foto":""},"secret":{"emoji":"🤐","foto":""},"intimidating":{"emoji":"😬","foto":""},"furious":{"emoji":"😡","foto":""},"desperate":{"emoji":"😩","foto":""},"sneer":{"emoji":"😏","foto":""},"mutter":{"emoji":"🗣️","foto":""},"uneasy":{"emoji":"😟","foto":""},"stunned":{"emoji":"😵","foto":""},"reckless":{"emoji":"🏎️","foto":""},"overhear":{"emoji":"👂","foto":""},"janitor":{"emoji":"🧹","foto":"janitor cleaning"},"lethal amount":{"emoji":"☠️","foto":""},"indifferent":{"emoji":"😑","foto":""},"Strait of Hormuz":{"emoji":"🌊","foto":"Strait of Hormuz"},"installments":{"emoji":"💳","foto":""},"slender":{"emoji":"🧍‍♀️","foto":""},"wandering":{"emoji":"🚶","foto":"walking city street night"},"smack lips":{"emoji":"😋","foto":""},"rain pattering":{"emoji":"🌧️","foto":"rain on window"},"suspenders":{"emoji":"👖","foto":"suspenders braces"},"fleece":{"emoji":"🧥","foto":"fleece jacket"},"convertible":{"emoji":"🚗","foto":"convertible car"},"decline":{"emoji":"📉","foto":""},"burden":{"emoji":"🎒","foto":""},"hoisted me up":{"emoji":"🏋️","foto":""},"whacked":{"emoji":"👊","foto":""},"supervisor":{"emoji":"👔","foto":""},"hooking up":{"emoji":"🔌","foto":""},"meddle":{"emoji":"🫳","foto":""},"I don't like to meddle.":{"emoji":"🙅","foto":""},"fainted":{"emoji":"😵‍💫","foto":""},"goddess":{"emoji":"👸","foto":"goddess statue"},"I can't help it.":{"emoji":"🤷","foto":""},"jinxed":{"emoji":"🐈‍⬛","foto":"black cat"},"stutter":{"emoji":"🗣️","foto":""},"badgering":{"emoji":"❓","foto":""},"furl sail":{"emoji":"⛵","foto":"sailboat sail"},"back astern":{"emoji":"🚢","foto":""},"neglected":{"emoji":"🏚️","foto":"abandoned house"},"orchard":{"emoji":"🍎","foto":"apple orchard"},"jeopardize":{"emoji":"⚠️","foto":""},"equity":{"emoji":"📈","foto":""},"bizarre":{"emoji":"🤨","foto":""},"banished":{"emoji":"🏝️","foto":""},"superstitious":{"emoji":"🔮","foto":""},"abducted":{"emoji":"🚐","foto":""},"on the house":{"emoji":"🍹","foto":"cocktail bar"},"crowbar":{"emoji":"🪛","foto":"crowbar"},"dug up":{"emoji":"⛏️","foto":"digging soil"},"put money into it":{"emoji":"💰","foto":""},"get fed":{"emoji":"🍽️","foto":""},"bombs away":{"emoji":"🚀","foto":""},"interstate":{"emoji":"🛣️","foto":"interstate highway"},"bolting":{"emoji":"🏃","foto":""},"clamoring":{"emoji":"📢","foto":"crowd protest"},"onlookers":{"emoji":"👥","foto":"crowd watching"},"shivers":{"emoji":"🥶","foto":""},"object rattling":{"emoji":"📦","foto":""},"yelping":{"emoji":"🐕","foto":""},"rascal":{"emoji":"😜","foto":""},"christening":{"emoji":"👶","foto":"baptism church"},"godfather":{"emoji":"🤵","foto":""},"viscosity":{"emoji":"🍯","foto":"honey dripping"},"The sink drain is clogged.":{"emoji":"🚰","foto":"sink drain"},"Water is leaking from the drainpipe under the sink.":{"emoji":"💧","foto":"pipe under sink"},"twinkling":{"emoji":"✨","foto":"stars night sky"},"wavelength":{"emoji":"📻","foto":""},"glaciologist":{"emoji":"🧊","foto":"glacier"},"tartan":{"emoji":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","foto":"tartan fabric"},"gangly":{"emoji":"🦒","foto":""},"juxtaposition":{"emoji":"🔀","foto":""},"sertraline":{"emoji":"💊","foto":""},"corduroy":{"emoji":"👖","foto":"corduroy fabric"},"pinafore dress":{"emoji":"👗","foto":"pinafore dress"},"superfluous":{"emoji":"➕","foto":""},"captivating":{"emoji":"🤩","foto":""},"depressing":{"emoji":"😞","foto":""},"You've read that, haven't you?":{"emoji":"📖","foto":""},"keen on":{"emoji":"😍","foto":""},"I'm keen on hiking.":{"emoji":"🥾","foto":"hiking trail"},"Resubmit the form?":{"emoji":"📝","foto":""},"windmills":{"emoji":"🌬️","foto":"windmill"},"rainy day":{"emoji":"☔","foto":"rainy day street"}};
 const POS_SEED = {"headache":{"pos":["n"]},"puzzled":{"pos":["adj"]},"taken from real life":{"pos":["idiom"]},"based on real life":{"pos":["idiom"]},"sick leave":{"pos":["n"]},"In an hour, I start work.":{"pos":["sent"]},"hijack":{"pos":["v","n"]},"commodity":{"pos":["n"]},"scared":{"pos":["adj"]},"Bring it on!":{"pos":["idiom"],"forms":"bring – brought – brought"},"catch up on":{"pos":["phr"],"forms":"catch – caught – caught"},"scales":{"pos":["n"]},"The scales show I've lost 2 kilograms.":{"pos":["sent"]},"movie binge":{"pos":["n"]},"hailstorm":{"pos":["n"]},"acquaintance":{"pos":["n"]},"get on well":{"pos":["phr"],"forms":"get – got – got"},"see eye to eye":{"pos":["idiom"],"forms":"see – saw – seen"},"fall out with":{"pos":["phr"],"forms":"fall – fell – fallen"},"have an affair":{"pos":["idiom"],"forms":"have – had – had"},"make it up":{"pos":["phr"],"forms":"make – made – made"},"see each other":{"pos":["idiom"],"forms":"see – saw – seen"},"get together":{"pos":["phr"],"forms":"get – got – got"},"attachment":{"pos":["n"]},"She feels a deep attachment to her hometown.":{"pos":["sent"]},"self-esteem":{"pos":["n"]},"win over someone":{"pos":["phr"],"forms":"win – won – won"},"tidy":{"pos":["v","adj"]},"tedious":{"pos":["adj"]},"cliché":{"pos":["n"]},"loathe":{"pos":["v"]},"They visited us.":{"pos":["sent"]},"striving for success":{"pos":["idiom"]},"unremarkable":{"pos":["adj"]},"He lived an unremarkable life in a small town.":{"pos":["sent"]},"notwithstanding":{"pos":["prep"]},"caveat":{"pos":["n"]},"reluctant":{"pos":["adj"]},"inevitable":{"pos":["adj"]},"inevitably":{"pos":["adv"]},"justification":{"pos":["n"]},"vulnerable":{"pos":["adj"]},"withdraw":{"pos":["v"],"forms":"withdraw – withdrew – withdrawn"},"fulcrum":{"pos":["n"]},"equilibrium":{"pos":["n"]},"aftermath":{"pos":["n"]},"sever":{"pos":["v"]},"sullen":{"pos":["adj"]},"hallmark":{"pos":["n"]},"perverted":{"pos":["adj"]},"compulsively":{"pos":["adv"]},"ubiquitous":{"pos":["adj"]},"pernicious":{"pos":["adj"]},"ephemeral":{"pos":["adj"]},"eloquent":{"pos":["adj"]},"serendipity":{"pos":["n"]},"abstain":{"pos":["v"]},"premature":{"pos":["adj"]},"inflammation":{"pos":["n"]},"mould (UK) / mold (US)":{"pos":["n","v"]},"hunched shoulders":{"pos":["n"]},"demeanor":{"pos":["n"]},"radiant smile":{"pos":["n"]},"strode into":{"pos":["v"],"forms":"stride – strode – stridden"},"long haul":{"pos":["n","idiom"]},"relapsed":{"pos":["v"]},"soliloquies":{"pos":["n"]},"self-binding":{"pos":["n","adj"]},"prior":{"pos":["adj"]},"thereby":{"pos":["adv"]},"mitigate":{"pos":["v"]},"discount":{"pos":["n","v"]},"discounting":{"pos":["v"]},"whiz on":{"pos":["phr"]},"wrapped up":{"pos":["phr","adj"]},"He is completely wrapped up in his work.":{"pos":["sent"]},"reinforce":{"pos":["v"]},"teaspoonful":{"pos":["n"]},"bandage":{"pos":["n","v"]},"injections":{"pos":["n"]},"operation":{"pos":["n"]},"plaster":{"pos":["n"]},"tablets":{"pos":["n"]},"operate on":{"pos":["phr"]},"crutches":{"pos":["n"]},"spectacles":{"pos":["n"]},"vision":{"pos":["n"]},"wheelchairs":{"pos":["n"]},"general anaesthetic":{"pos":["n"]},"X-rays":{"pos":["n"]},"contact lenses":{"pos":["n"]},"manufactured":{"pos":["v","adj"]},"medical technology":{"pos":["n"]},"devices":{"pos":["n"]},"hearing aids":{"pos":["n"]},"pacemakers":{"pos":["n"]},"artificial hips":{"pos":["n"]},"prosthetic leg":{"pos":["n"]},"robotic arm":{"pos":["n"]},"laser surgery":{"pos":["n"]},"scanners":{"pos":["n"]},"blood pressure":{"pos":["n"]},"thermometers":{"pos":["n"]},"databases":{"pos":["n"]},"tools":{"pos":["n"]},"treat diseases":{"pos":["idiom"]},"keyhole surgery":{"pos":["n"]},"gibberish":{"pos":["n"]},"saliva":{"pos":["n"]},"heated seats":{"pos":["n"]},"severe":{"pos":["adj"]},"robe":{"pos":["n"]},"give a mean look":{"pos":["idiom"],"forms":"give – gave – given"},"get detention":{"pos":["idiom"],"forms":"get – got – got"},"get past":{"pos":["phr"],"forms":"get – got – got (US: gotten)"},"bladder":{"pos":["n"]},"frantically":{"pos":["adv"]},"suspicious":{"pos":["adj"]},"whisper":{"pos":["v","n"]},"terrified":{"pos":["adj"]},"brave":{"pos":["adj"]},"suddenly":{"pos":["adv"]},"realize":{"pos":["v"]},"avoid":{"pos":["v"]},"protect":{"pos":["v"]},"angry":{"pos":["adj"]},"secret":{"pos":["n","adj"]},"intimidating":{"pos":["adj"]},"furious":{"pos":["adj"]},"desperate":{"pos":["adj"]},"sneer":{"pos":["v","n"]},"mutter":{"pos":["v"]},"uneasy":{"pos":["adj"]},"stunned":{"pos":["adj"]},"reckless":{"pos":["adj"]},"overhear":{"pos":["v"],"forms":"overhear – overheard – overheard"},"janitor":{"pos":["n"]},"lethal amount":{"pos":["n"]},"indifferent":{"pos":["adj"]},"Strait of Hormuz":{"pos":["n"]},"installments":{"pos":["n"]},"slender":{"pos":["adj"]},"wandering":{"pos":["v","n"]},"smack lips":{"pos":["idiom"]},"rain pattering":{"pos":["n"]},"suspenders":{"pos":["n"]},"fleece":{"pos":["n"]},"convertible":{"pos":["n","adj"]},"decline":{"pos":["v","n"]},"burden":{"pos":["n"]},"hoisted me up":{"pos":["phr"]},"whacked":{"pos":["v","adj"]},"supervisor":{"pos":["n"]},"hooking up":{"pos":["phr"]},"meddle":{"pos":["v"]},"I don't like to meddle.":{"pos":["sent"]},"fainted":{"pos":["v"]},"goddess":{"pos":["n"]},"I can't help it.":{"pos":["sent","idiom"]},"jinxed":{"pos":["adj"]},"stutter":{"pos":["v","n"]},"badgering":{"pos":["v"]},"furl sail":{"pos":["idiom"]},"back astern":{"pos":["idiom"]},"neglected":{"pos":["adj"]},"orchard":{"pos":["n"]},"jeopardize":{"pos":["v"]},"equity":{"pos":["n"]},"bizarre":{"pos":["adj"]},"banished":{"pos":["v","adj"]},"superstitious":{"pos":["adj"]},"abducted":{"pos":["v","adj"]},"on the house":{"pos":["idiom"]},"crowbar":{"pos":["n"]},"dug up":{"pos":["phr"],"forms":"dig – dug – dug"},"put money into it":{"pos":["idiom"],"forms":"put – put – put"},"get fed":{"pos":["idiom"],"forms":"feed – fed – fed"},"bombs away":{"pos":["idiom"]},"interstate":{"pos":["n","adj"]},"bolting":{"pos":["v"]},"clamoring":{"pos":["v"]},"onlookers":{"pos":["n"]},"shivers":{"pos":["n"]},"object rattling":{"pos":["n"]},"yelping":{"pos":["v"]},"rascal":{"pos":["n"]},"christening":{"pos":["n"]},"godfather":{"pos":["n"]},"viscosity":{"pos":["n"]},"The sink drain is clogged.":{"pos":["sent"]},"Water is leaking from the drainpipe under the sink.":{"pos":["sent"]},"twinkling":{"pos":["v","adj"]},"wavelength":{"pos":["n"]},"glaciologist":{"pos":["n"]},"tartan":{"pos":["n"]},"gangly":{"pos":["adj"]},"juxtaposition":{"pos":["n"]},"sertraline":{"pos":["n"]},"corduroy":{"pos":["n"]},"pinafore dress":{"pos":["n"]},"superfluous":{"pos":["adj"]},"captivating":{"pos":["adj"]},"depressing":{"pos":["adj"]},"You've read that, haven't you?":{"pos":["sent"]},"keen on":{"pos":["adj","idiom"]},"I'm keen on hiking.":{"pos":["sent"]},"Resubmit the form?":{"pos":["sent"]},"windmills":{"pos":["n"]},"rainy day":{"pos":["n","idiom"]}};
 
 function readLocal(){ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY)) || []; }catch(e){ return []; } }
@@ -594,6 +623,8 @@ function clean(it){
   return { en:it.en||"", pl:it.pl||"", pron:it.pron||"", exEn:it.exEn||"", exPl:it.exPl||"",
            known:!!it.known, miss:it.miss||0, added:it.added || new Date().toISOString(),
            pos: Array.isArray(it.pos) ? it.pos : [], forms: it.forms || "",
+           lvl: it.lvl || 0, due: it.due || "", almost: it.almost || 0,
+           emoji: it.emoji || "", foto: it.foto || "", ...(it.img ? { img: it.img } : {}),
            ...(it.more ? { more: it.more } : {}) };
 }
 function saveLocal(){ try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(items)); }catch(e){ toast("Nie udało się zapisać"); } dataChanged(); }
@@ -601,16 +632,68 @@ function fail(e){ console.error(e); toast(/permission/i.test(e && e.message) ? "
 
 const seedTried = new Set();
 function seedPos(){
-  const todo = items.filter(i => !seedTried.has(i.id) && !(i.pos && i.pos.length) && POS_SEED[i.en]);
-  if(!todo.length) return;
-  todo.forEach(i => seedTried.add(i.id));
-  store.bulkUpdate(todo.map(i => [i.id, { pos: POS_SEED[i.en].pos, forms: POS_SEED[i.en].forms || "" }])).catch(e => console.warn(e));
+  const pairs = [];
+  items.forEach(i => {
+    if(seedTried.has(i.id)) return;
+    seedTried.add(i.id);
+    const d = {};
+    if(!(i.pos && i.pos.length) && POS_SEED[i.en]){ d.pos = POS_SEED[i.en].pos; d.forms = POS_SEED[i.en].forms || ""; }
+    if(i.emoji === undefined && MEDIA_SEED[i.en]){ d.emoji = MEDIA_SEED[i.en].emoji; d.foto = MEDIA_SEED[i.en].foto; }
+    // znane słówka bez terminu powtórki — rozłóż powtórki na najbliższe 2 tygodnie
+    if(i.known && !i.due){ d.lvl = Math.max(i.lvl || 0, 3); d.due = new Date(Date.now() + (1 + Math.random() * 13) * 864e5).toISOString(); }
+    if(Object.keys(d).length) pairs.push([i.id, d]);
+  });
+  if(pairs.length) store.bulkUpdate(pairs).catch(e => console.warn(e));
 }
+
+/* ---------- zdjęcia z Openverse (darmowe, bez klucza) ---------- */
+const OV_API = "https://api.openverse.org/v1/images/";
+async function ovSearch(q, n){
+  const r = await fetch(`${OV_API}?q=${encodeURIComponent(q)}&page_size=${n || 8}`);
+  if(r.status === 429){ const e = new Error("Za dużo zapytań do Openverse — spróbuj za chwilę"); e.rate = true; throw e; }
+  if(!r.ok) throw new Error("Openverse: błąd " + r.status);
+  const d = await r.json();
+  return (d.results || []).filter(x => x && (x.thumbnail || x.url)).map(x => ({
+    u: x.thumbnail || x.url, full: x.url || x.thumbnail, t: x.title || "", by: x.creator || "",
+    lic: ((x.license || "") === "cc0" ? "CC0" : ("CC " + (x.license || "").toUpperCase() + (x.license_version ? " " + x.license_version : ""))).trim(),
+    link: x.foreign_landing_url || x.url || ""
+  }));
+}
+const imgQ = [], imgBusy = new Set(); let imgRunning = false, imgPauseUntil = 0;
+function ensureImg(it){
+  if(!it || !it.foto || it.img || imgBusy.has(it.id) || Date.now() < imgPauseUntil) return;
+  imgBusy.add(it.id); imgQ.push(it.id); runImgQ();
+}
+async function runImgQ(){
+  if(imgRunning) return; imgRunning = true;
+  while(imgQ.length){
+    const id = imgQ.shift(), it = byId(id);
+    if(it && it.foto && !it.img){
+      try{
+        const res = await ovSearch(it.foto, 6);
+        await store.update(id, { img: res[0] || { none: true } });
+      }catch(e){
+        console.warn(e); imgBusy.delete(id);
+        if(e.rate){ imgPauseUntil = Date.now() + 60e3; imgQ.length = 0; break; }
+      }
+      await new Promise(s => setTimeout(s, 700));
+    }
+  }
+  imgRunning = false;
+}
+const hasPhoto = it => it && it.img && it.img.u;
+const credit = img => img && img.u ? `<a class="credit" href="${esc(img.link || img.full)}" target="_blank" rel="noopener">📷 ${esc(img.by || "autor nieznany")} · ${esc(img.lic || "CC")} · Openverse</a>` : "";
+const imgObserver = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => {
+  if(e.isIntersecting){ imgObserver.unobserve(e.target); ensureImg(byId(e.target.dataset.imgq)); }
+}), { rootMargin: "200px" }) : null;
 
 function sortItems(){ items.sort((a,b) => (b.added||"").localeCompare(a.added||"") || a.id.localeCompare(b.id)); }
 
 function dataChanged(){
   updateStats();
+  // zdjęcie doczytało się w tle — pokaż je od razu
+  if(typeof moreId !== "undefined" && moreId && $("moreImg") && !$("imgGrid") && hasPhoto(byId(moreId)) && !$("moreImg").querySelector("img")) renderMoreImg(moreId);
+  if($("tab-learn").classList.contains("on") && revealed && deck[pos] && hasPhoto(byId(deck[pos])) && !document.querySelector("#flash .flashImg")) renderCard();
   if($("tab-list").classList.contains("on")) renderList();
   if($("tab-settings").classList.contains("on")) renderSettings();
 }
@@ -692,6 +775,8 @@ Zwróć WYŁĄCZNIE obiekt JSON z polami:
 - "exEn": jeśli wpis to słowo lub krótki zwrot – jedno proste, naturalne zdanie przykładowe z nim; jeśli wpis to całe zdanie – "".
 - "exPl": tłumaczenie exEn na polski albo "".
 - "pos": lista części mowy dla "en" (główna jako pierwsza), wybierz z kluczy: "n" rzeczownik, "v" czasownik, "adj" przymiotnik, "adv" przysłówek, "phr" phrasal verb, "idiom" zwrot/wyrażenie, "sent" całe zdanie, "prep" przyimek lub spójnik. Słowo o kilku rolach dostaje kilka kluczy, np. "decline" → ["v","n"].
+- "emoji": 1–2 emoji najlepiej obrazujące znaczenie (np. "headache" → "🤕", "orchard" → "🍎🌳").
+- "foto": jeśli znaczenie da się pokazać na zwykłym zdjęciu (rzecz, miejsce, zwierzę, czynność, zjawisko) — krótkie angielskie hasło do wyszukania zdjęcia, np. "apple orchard"; dla pojęć abstrakcyjnych, spójników, całych zdań itp. — "".
 - "forms": jeśli "en" to czasownik nieregularny albo phrasal verb / zwrot z czasownikiem nieregularnym — trzy formy tego czasownika, np. "dig – dug – dug"; w każdym innym przypadku "".
 Wpis: `;
 
@@ -702,7 +787,7 @@ const T = {
   obj: (props, req) => ({ type:"OBJECT", properties: props, required: req || Object.keys(props) })
 };
 const T_POS = T.arr({ type:"STRING", enum:["n","v","adj","adv","phr","idiom","sent","prep"] });
-const SCHEMA_ADD = T.obj({ en:T.s, fixed:T.b, note:T.s, pl:T.s, pron:T.s, exEn:T.s, exPl:T.s, pos:T_POS, forms:T.s });
+const SCHEMA_ADD = T.obj({ en:T.s, fixed:T.b, note:T.s, pl:T.s, pron:T.s, exEn:T.s, exPl:T.s, pos:T_POS, forms:T.s, emoji:T.s, foto:T.s });
 const SCHEMA_POSB = T.obj({ wyniki: T.arr(T.obj({ i:T.i, pos:T_POS, forms:T.s })) });
 const SCHEMA_MORE = T.obj({
   znaczenia: T.arr(T.obj({ pl:T.s, kiedy:T.s })), rejestr:T.s, ciekawostka:T.s, rodzina: T.arr(T.obj({ en:T.s, pos:T.s, pl:T.s })),
@@ -907,8 +992,8 @@ async function freeFill(text){
 }
 
 /* ================= AUTOMATYCZNE UZUPEŁNIANIE ================= */
-const FIELDS = ["pl","pron","exEn","exPl","forms"];
-let formPos = [], posTouched = false;
+const FIELDS = ["pl","pron","exEn","exPl","forms","emoji"];
+let formPos = [], posTouched = false, formFoto = null;
 function renderPosPick(){
   $("posPick").innerHTML = POS_KEYS.map(k => `<button type="button" class="chip pos-${k} ${formPos.includes(k) ? "on" : ""}" data-p="${k}">${POS[k][0]}</button>`).join("");
   $("formsWrap").hidden = !(formPos.includes("v") || formPos.includes("phr") || $("forms").value.trim());
@@ -970,6 +1055,8 @@ async function autoFill(force){
   setAuto("exEn", r.exEn, force);
   setAuto("exPl", r.exPl, force);
   setAuto("forms", r.forms, force);
+  setAuto("emoji", r.emoji, force);
+  if(typeof r.foto === "string" && (force || formFoto === null || !editingId)) formFoto = r.foto;
   if(Array.isArray(r.pos) && r.pos.length && (force || !posTouched)){ formPos = r.pos.filter(p => POS[p]); }
   else if(!formPos.length && !posTouched && /\s/.test(text) && /[.!?]$/.test(text)) formPos = ["sent"];
   renderPosPick();
@@ -988,7 +1075,7 @@ $("refill").onclick = () => { clearTimeout(autoTimer); autoFill(true); };
 
 /* ================= DODAJ / EDYTUJ ================= */
 function clearForm(){
-  formPos = []; posTouched = false; setTimeout(renderPosPick);
+  formPos = []; posTouched = false; formFoto = null; setTimeout(renderPosPick);
   ["en", ...FIELDS].forEach(f => $(f).value = "");
   autoFilled = {}; autoSeq++; lastAutoText = "";
   editingId = null; $("save").textContent = "Zapisz"; $("cancel").style.display = "none";
@@ -998,7 +1085,8 @@ $("save").onclick = async () => {
   const v = f => $(f).value.trim();
   const en = v("en");
   if(!en){ toast("Wpisz coś po angielsku"); $("en").focus(); return; }
-  const data = { en, pl:v("pl"), pron:v("pron"), exEn:v("exEn"), exPl:v("exPl"), pos: formPos.slice(), forms: v("forms") };
+  const data = { en, pl:v("pl"), pron:v("pron"), exEn:v("exEn"), exPl:v("exPl"), pos: formPos.slice(), forms: v("forms"), emoji: v("emoji") };
+  if(formFoto !== null){ data.foto = formFoto; const old = editingId && byId(editingId); if(!old || old.foto !== formFoto) data.img = null; }
   $("save").disabled = true;
   try{
     if(editingId){
@@ -1050,18 +1138,21 @@ function renderList(){
   const byNew = (a,b) => (b.added||"").localeCompare(a.added||"") || b.id.localeCompare(a.id);
   if(s === "new") shown.sort(byNew);
   if(s === "old") shown.sort((a,b) => -byNew(a,b));
-  if(s === "hard") shown.sort((a,b) => (b.miss||0) - (a.miss||0) || (!!a.known - !!b.known) || byNew(a,b));
+  if(s === "hard") shown.sort((a,b) => hardScore(b) - hardScore(a) || (!!a.known - !!b.known) || byNew(a,b));
   if(s === "az") shown.sort((a,b) => a.en.localeCompare(b.en, "en", {sensitivity:"base"}));
   $("count").textContent = items.length ? `${shown.length} pozycji` : "";
   if(!items.length){ $("list").innerHTML = '<div class="empty">Nic jeszcze nie ma — dodaj słówko w zakładce „Dodaj” albo wczytaj plik w „Ustawieniach”</div>'; return; }
   if(!shown.length){ $("list").innerHTML = '<div class="empty">Brak wyników</div>'; return; }
   $("list").innerHTML = shown.map(i => `
-    <div class="item ${i.known ? "known" : ""}">
+    <div class="item ${i.known ? "known" : ""}" ${i.foto && !i.img ? `data-imgq="${i.id}"` : ""}>
+      <div class="itemTop"><div class="itemMain">
       <div class="en">${esc(i.en)}${i.miss ? `<span class="miss" title="Ile razy nie wiedziałeś">✗ ${i.miss}</span>` : ""}</div>
       ${i.pos && i.pos.length ? `<div class="posRow">${posTags(i)}</div>` : ""}
       ${i.pl ? `<div class="pl">${esc(i.pl)}</div>` : ""}
       ${i.pron ? `<div class="pron">${esc(i.pron)}</div>` : ""}
       ${formsLine(i)}
+      </div>${hasPhoto(i) ? `<button class="thumb" data-more="${i.id}" title="${esc(i.img.by ? "📷 " + i.img.by : "")}"><img src="${esc(i.img.u)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('broken')">${i.emoji ? `<span>${esc(i.emoji)}</span>` : ""}</button>`
+        : i.emoji ? `<button class="thumb emo" data-more="${i.id}">${esc(i.emoji)}</button>` : ""}</div>
       ${i.exEn ? `<div class="ex"><div>${esc(i.exEn)}</div>${i.exPl ? `<div class="exPl">${esc(i.exPl)}</div>` : ""}</div>` : ""}
       <div class="actions">
         <button class="small knownBtn ${i.known ? "on" : ""}" data-known="${i.id}">${i.known ? "✓ Znam" : "Znam?"}</button>
@@ -1072,19 +1163,21 @@ function renderList(){
         <button class="small danger" data-del="${i.id}">Usuń</button>
       </div>
     </div>`).join("");
+  if(imgObserver) $("list").querySelectorAll("[data-imgq]").forEach(el => imgObserver.observe(el));
 }
 
 $("list").onclick = e => {
   const b = e.target.closest("button"); if(!b) return;
   const d = b.dataset;
-  if(d.known){ const it = byId(d.known); store.update(it.id, { known: !it.known }).catch(fail); }
+  if(d.known){ const it = byId(d.known);
+    store.update(it.id, it.known ? { known: false, lvl: 0, due: "" } : { known: true, lvl: Math.max(it.lvl || 0, 3), due: new Date(Date.now() + 7 * DAY).toISOString() }).catch(fail); }
   if(d.speak) speak(byId(d.speak).en);
   if(d.speakex) speak(byId(d.speakex).exEn);
   if(d.more) openMore(d.more);
   if(d.edit){
     const it = byId(d.edit);
     $("en").value = it.en; FIELDS.forEach(f => $(f).value = it[f] || "");
-    formPos = (it.pos || []).slice(); posTouched = true; renderPosPick();
+    formPos = (it.pos || []).slice(); posTouched = true; renderPosPick(); formFoto = null;
     autoFilled = {}; editingId = it.id; lastAutoText = it.en; $("fixBox").innerHTML = "";
     $("save").textContent = "Zapisz zmiany"; $("cancel").style.display = "block";
     showTab("add");
@@ -1125,18 +1218,35 @@ function fillLearnPos(){
 function startDeck(){
   fillLearnPos();
   if(learnMode === "hard"){
-    deck = items.filter(i => i.miss > 0 && posOk(i)).sort((a,b) => b.miss - a.miss).slice(0, 20).map(i => i.id);
+    deck = items.filter(i => hardScore(i) > 0 && posOk(i)).sort((a,b) => hardScore(b) - hardScore(a)).slice(0, 20).map(i => i.id);
+    deck = shuffleArr(deck);
+  } else if(learnMode === "all"){
+    deck = shuffleArr(items.filter(posOk).map(i => i.id));
   } else {
-    deck = items.filter(i => (learnMode === "all" || !i.known) && posOk(i)).map(i => i.id);
+    // „Do nauki”: nieznane + znane, którym minął termin powtórki — trudniejsze i zaległe częściej na początku
+    const now = new Date().toISOString();
+    deck = items.filter(i => posOk(i) && (!i.known || (i.due && i.due <= now)))
+      .map(i => ({ id: i.id, w: Math.random() * (1 + 2 * (i.miss || 0) + (i.almost || 0) + (i.known ? 1.5 : 0) + (i.lvl ? 0 : .5)) }))
+      .sort((a, b) => b.w - a.w).map(x => x.id);
   }
-  for(let i = deck.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [deck[i],deck[j]] = [deck[j],deck[i]]; }
-  pos = 0; revealed = false; answers = {};
+  pos = 0; revealed = false; answers = {}; requeued = new Set();
   renderCard();
+}
+let requeued = new Set();
+const DAY = 864e5, INTERVALS = [0, 1, 3, 7, 14, 30, 90];
+function hardScore(i){ return (i.miss || 0) + 0.5 * (i.almost || 0); }
+function srsSnap(i){ return { lvl: i.lvl || 0, due: i.due || "", miss: i.miss || 0, almost: i.almost || 0, known: !!i.known }; }
+function srsNext(b, v){
+  const now = Date.now(), at = ms => new Date(now + ms).toISOString();
+  if(v === "no")  return { ...b, lvl: 0, due: at(10 * 60e3), miss: b.miss + 1, known: false };
+  if(v === "mid"){ const lvl = b.lvl >= 3 ? b.lvl - 1 : b.lvl; return { ...b, lvl, due: at(Math.max(1, Math.round(INTERVALS[lvl] / 2)) * DAY), almost: b.almost + 1, known: false }; }
+  const lvl = Math.min(INTERVALS.length - 1, b.lvl + 1);
+  return { ...b, lvl, due: at(INTERVALS[lvl] * DAY), known: true };
 }
 function posOk(i){ return learnPos === "all" || (i.pos || []).includes(learnPos); }
 function roundScore(){
-  const v = Object.values(answers);
-  return { yes: v.filter(x => x).length, no: v.filter(x => !x).length };
+  const v = Object.values(answers).map(a => a.v);
+  return { yes: v.filter(x => x === "yes").length, mid: v.filter(x => x === "mid").length, no: v.filter(x => x === "no").length };
 }
 function goTo(p){
   if(p < 0 || p > deck.length) return;
@@ -1159,7 +1269,7 @@ function renderCard(){
   if(pos >= deck.length){
     box.innerHTML = `<div class="card empty">
       <div style="font-size:1.3rem;font-weight:700;color:var(--text)">Koniec rundy</div>
-      <p>✅ Znam: <b>${sc.yes}</b> &nbsp; ❌ Do powtórki: <b>${sc.no}</b></p>
+      <p>✅ Znam: <b>${sc.yes}</b> &nbsp; 🟠 Tak sobie: <b>${sc.mid}</b> &nbsp; ❌ Nie znam: <b>${sc.no}</b></p>
       <div class="row" style="justify-content:center">
         <button id="backLast">‹ Wróć</button>
         <button class="primary" id="againBtn">Jeszcze raz</button>
@@ -1170,20 +1280,22 @@ function renderCard(){
   }
   const it = byId(deck[pos]);
   if(!it){ deck.splice(pos, 1); return renderCard(); }
+  ensureImg(it); const nx = byId(deck[pos + 1]); if(nx) ensureImg(nx);
   const front = dir === "en" ? it.en : (it.pl || it.en);
   const back  = dir === "en" ? (it.pl || "—") : it.en;
-  const prev = answers[pos];
+  const prev = answers[pos] && answers[pos].v;
   box.innerHTML = `
     <div class="navRow">
       <button class="navBtn" id="prevBtn" ${pos === 0 ? "disabled" : ""} aria-label="Poprzednie">‹</button>
-      <div class="navMid"><b>${pos+1} / ${deck.length}</b><span>✅ ${sc.yes} · ❌ ${sc.no}</span></div>
+      <div class="navMid"><b>${pos+1} / ${deck.length}</b><span>✅ ${sc.yes} · 🟠 ${sc.mid} · ❌ ${sc.no}</span></div>
       <button class="navBtn" id="nextBtn" aria-label="Następne">›</button>
     </div>
     <div class="card flash" id="flash">
-      ${prev !== undefined ? `<div class="was ${prev ? "yes" : "no"}">${prev ? "✅ zaznaczyłeś: znam" : "❌ zaznaczyłeś: nie znam"}</div>` : ""}
+      ${prev ? `<div class="was ${prev}">${{ yes: "✅ zaznaczyłeś: znam", mid: "🟠 zaznaczyłeś: tak sobie", no: "❌ zaznaczyłeś: nie znam" }[prev]}</div>` : ""}
       <div class="front">${esc(front)}</div>
       ${revealed ? `
         <div class="answer">
+          ${hasPhoto(it) ? `<div class="flashImg"><img src="${esc(it.img.u)}" alt="" onerror="this.parentNode.remove()">${credit(it.img)}</div>` : it.emoji ? `<div class="flashEmo">${esc(it.emoji)}</div>` : ""}
           <div class="big">${esc(back)}</div>
           ${it.pos && it.pos.length ? `<div class="posRow" style="justify-content:center">${posTags(it)}</div>` : ""}
           ${it.pron ? `<div class="pron">${esc(it.pron)}</div>` : ""}
@@ -1197,9 +1309,10 @@ function renderCard(){
       ${revealed ? `<button class="small moreBtn" id="cardMore">💡 Więcej</button>` : ""}
     </div>
     ${revealed
-      ? `<div class="answerBtns">
-           <button class="no ${prev === false ? "picked" : ""}" id="noBtn">❌ Nie znam</button>
-           <button class="yes ${prev === true ? "picked" : ""}" id="yesBtn">✅ Znam</button>
+      ? `<div class="answerBtns three">
+           <button class="no ${prev === "no" ? "picked" : ""}" id="noBtn">❌<span>Nie znam</span></button>
+           <button class="mid ${prev === "mid" ? "picked" : ""}" id="midBtn">🟠<span>Tak sobie</span></button>
+           <button class="yes ${prev === "yes" ? "picked" : ""}" id="yesBtn">✅<span>Znam</span></button>
          </div>`
       : `<button class="primary wide" id="showBtn" style="margin-top:0">Pokaż odpowiedź</button>`}`;
   const reveal = () => { if(!revealed){ revealed = true; renderCard(); if(dir === "pl") speak(it.en); } };
@@ -1221,18 +1334,20 @@ function renderCard(){
   if($("cardSpeakEx")) $("cardSpeakEx").onclick = () => speak(it.exEn);
   if($("cardMore")) $("cardMore").onclick = () => openMore(it.id);
   if(revealed){
-    $("yesBtn").onclick = () => answer(it, true);
-    $("noBtn").onclick  = () => answer(it, false);
+    $("yesBtn").onclick = () => answer(it, "yes");
+    $("midBtn").onclick = () => answer(it, "mid");
+    $("noBtn").onclick  = () => answer(it, "no");
   }
 }
-function answer(it, known){
+function answer(it, v){
   const prev = answers[pos];
-  if(prev !== known){
-    if(!known) store.miss(it.id).catch(fail);                          // nowe „nie znam” albo zmiana z „znam”
-    else if(prev === false) store.unmiss(it.id).catch(fail);           // poprawka: jednak znam
-    else if(!it.known) store.update(it.id, { known:true }).catch(fail);
+  if(!prev || prev.v !== v){
+    const base = prev ? prev.snap : srsSnap(it);           // zmiana odpowiedzi liczy się od stanu sprzed pierwszej
+    store.update(it.id, srsNext(base, v)).catch(fail);
+    answers[pos] = { v, snap: base };
+    // „nie znam” — słówko wraca jeszcze raz w tej samej sesji, kilka kart dalej
+    if(v === "no" && learnMode !== "all" && !requeued.has(it.id)){ requeued.add(it.id); deck.splice(Math.min(deck.length, pos + 5), 0, it.id); }
   }
-  answers[pos] = known;
   goTo(pos + 1);
 }
 document.addEventListener("keydown", e => {
@@ -1240,6 +1355,7 @@ document.addEventListener("keydown", e => {
   if(e.key === "ArrowLeft") goTo(pos - 1);
   else if(e.key === "ArrowRight") goTo(pos + 1);
   else if(e.key === " " && !revealed && pos < deck.length){ e.preventDefault(); revealed = true; renderCard(); }
+  else if(revealed && pos < deck.length && "123".includes(e.key) && e.key){ const it = byId(deck[pos]); if(it) answer(it, ["no","mid","yes"][+e.key - 1]); }
 });
 
 /* ================= WIĘCEJ (AI + internet) ================= */
@@ -1277,19 +1393,22 @@ function openMore(id, force){
   requestAnimationFrame(() => $("sheet").classList.add("open"));
   if(it.more && !force){ renderMore(it, it.more); return; }
   if(!hasAI()){
-    $("sheetBody").innerHTML = `<p class="muted">Ciekawostki i przykłady pisze Gemini — dodaj klucz w <button class="link" id="moreSet">Ustawieniach</button>.</p>
+    $("sheetBody").innerHTML = `<div id="moreImg"></div><p class="muted">Ciekawostki i przykłady pisze Gemini — dodaj klucz w <button class="link" id="moreSet">Ustawieniach</button>.</p>
       <h3>Sprawdź w internecie</h3>${webLinks(it.en)}`;
     $("moreSet").onclick = () => { closeMore(); showTab("settings"); };
+    renderMoreImg(id);
     return;
   }
-  $("sheetBody").innerHTML = `<div class="loading"><div class="spin"></div>Gemini szuka ciekawostek…</div>`;
+  $("sheetBody").innerHTML = `<div id="moreImg"></div><div class="loading"><div class="spin"></div>Gemini szuka ciekawostek…</div>`;
+  renderMoreImg(id);
   aiJSON(MORE_PROMPT(it), 0.6, SCHEMA_MORE).then(m => {
     if(moreId !== id) return;
     store.update(id, { more: m }).catch(() => {});
     renderMore(it, m);
   }).catch(e => {
     if(moreId !== id) return;
-    $("sheetBody").innerHTML = `<p class="bad">Nie udało się: ${esc(e.message.slice(0,120))}</p><h3>Sprawdź w internecie</h3>${webLinks(it.en)}`;
+    $("sheetBody").innerHTML = `<div id="moreImg"></div><p class="bad">Nie udało się: ${esc(e.message.slice(0,120))}</p><h3>Sprawdź w internecie</h3>${webLinks(it.en)}`;
+    renderMoreImg(id);
   });
 }
 function renderMore(it, m){
@@ -1297,6 +1416,7 @@ function renderMore(it, m){
   const tags = (a) => list(a).map(x => `<span class="tag">${esc(x)}</span>`).join("");
   const ex = list(m.przyklady);
   $("sheetBody").innerHTML = `
+    <div id="moreImg"></div>
     ${list(m.znaczenia).length ? `<h3>Znaczenia</h3>${list(m.znaczenia).map(z => `<div class="mean"><b>${esc(z.pl)}</b>${z.kiedy ? ` — ${esc(z.kiedy)}` : ""}</div>`).join("")}` : ""}
     ${m.rejestr ? `<p class="reg">🗣️ ${esc(m.rejestr)}</p>` : ""}
     ${m.ciekawostka ? `<div class="fun">💡 ${esc(m.ciekawostka)}</div>` : ""}
@@ -1326,6 +1446,7 @@ function renderMore(it, m){
     catch(e){ fail(e); }
   });
   $("moreAgain").onclick = () => openMore(it.id, true);
+  renderMoreImg(it.id);
   if($("moreFam")) $("moreFam").onclick = () => openMore(it.id, true);
   const fam = list(m.rodzina);
   $("sheetBody").querySelectorAll("[data-fsay]").forEach(b => b.onclick = () => speak(fam[+b.dataset.fsay].en));
@@ -1336,6 +1457,34 @@ function renderMore(it, m){
     try{ await store.add({ id:newId(), en:x.en, pl:x.pl, pron:"", exEn:"", exPl:"", pos: POS[x.pos] ? [x.pos] : [], forms:"", known:false, miss:0, added:new Date().toISOString() }); toast("Dodano do słówek"); }
     catch(e){ fail(e); }
   });
+}
+function renderMoreImg(id){
+  const box = $("moreImg"), it = byId(id); if(!box || !it) return;
+  ensureImg(it);
+  box.innerHTML = hasPhoto(it)
+    ? `<div class="moreImg"><img src="${esc(it.img.full || it.img.u)}" alt="" onerror="this.src='${esc(it.img.u)}'">${credit(it.img)}</div>
+       <div class="row" style="margin:6px 0 4px"><button class="small" id="imgPick" style="flex:1">🔄 Inne zdjęcie</button><button class="small ghost" id="imgDel">✕ Bez zdjęcia</button></div>`
+    : `<div class="row" style="margin:4px 0">${it.emoji ? `<span class="moreEmo">${esc(it.emoji)}</span>` : ""}<span style="flex:1"></span><button class="small" id="imgPick">🖼️ ${it.img && it.img.none ? "Poszukaj zdjęcia" : "Dodaj zdjęcie"}</button></div>`;
+  $("imgPick").onclick = () => pickImg(id, it.foto || it.en.replace(/[.!?]+$/, ""));
+  if($("imgDel")) $("imgDel").onclick = () => store.update(id, { img: { none: true } }).then(() => renderMoreImg(id)).catch(fail);
+}
+async function pickImg(id, q){
+  const box = $("moreImg"); if(!box) return;
+  box.innerHTML = `<div class="row" style="margin:4px 0"><input id="imgQ" value="${esc(q)}" placeholder="hasło po angielsku" autocomplete="off"><button class="small" id="imgGo">Szukaj</button></div>
+    <div class="imgGrid" id="imgGrid"><div class="loading" style="grid-column:1/-1;padding:18px"><div class="spin"></div></div></div>
+    <button class="ghost small wide" id="imgCancel" style="margin-top:4px">Anuluj</button>`;
+  $("imgCancel").onclick = () => renderMoreImg(id);
+  $("imgGo").onclick = () => pickImg(id, $("imgQ").value.trim() || q);
+  $("imgQ").onkeydown = e => { if(e.key === "Enter") $("imgGo").click(); };
+  try{
+    const res = await ovSearch(q, 12);
+    if(!$("imgGrid")) return;
+    $("imgGrid").innerHTML = res.length ? res.map((r, k) => `<button data-k="${k}"><img src="${esc(r.u)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></button>`).join("")
+      : `<div class="muted small" style="grid-column:1/-1">Nic nie znaleziono — spróbuj innego hasła po angielsku.</div>`;
+    $("imgGrid").querySelectorAll("[data-k]").forEach(b => b.onclick = async () => {
+      try{ await store.update(id, { img: res[+b.dataset.k], foto: $("imgQ").value.trim() || q }); renderMoreImg(id); toast("Zdjęcie zmienione"); }catch(e){ fail(e); }
+    });
+  }catch(e){ if($("imgGrid")) $("imgGrid").innerHTML = `<div class="bad small" style="grid-column:1/-1">${esc(e.message)}</div>`; }
 }
 function closeMore(){
   moreId = null;
@@ -2473,7 +2622,8 @@ function filmWords(){
           if(cine.paused) return;
           if(k >= montage.length) return;
           const it = montage[k];
-          sc.querySelector("#mWord").innerHTML = `<div class="mIn"><b>${esc(it.en)}</b>${it.pos && it.pos.length ? `<div>${posTags(it)}</div>` : ""}<span>${esc(it.pl || "")}</span>${it.pron ? `<em>[${esc(it.pron)}]</em>` : ""}</div>`;
+          sc.style.setProperty("--mbg", hasPhoto(it) ? `url("${String(it.img.full || it.img.u).replace(/"/g, "%22")}")` : "none");
+          sc.querySelector("#mWord").innerHTML = `<div class="mIn">${!hasPhoto(it) && it.emoji ? `<i class="mEmo">${esc(it.emoji)}</i>` : ""}<b>${esc(it.en)}</b>${it.pos && it.pos.length ? `<div>${posTags(it)}</div>` : ""}<span>${esc(it.pl || "")}</span>${it.pron ? `<em>[${esc(it.pron)}]</em>` : ""}</div>`;
           sc.querySelector("#mCount").textContent = `${k + 1} / ${montage.length}`;
           cineSay(it.en);
           k++;
