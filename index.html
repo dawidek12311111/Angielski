@@ -188,6 +188,37 @@
   .verdict.badBox{background:var(--danger-soft)}
   .big{font-size:2.4rem}
 
+  /* pomoc / rozmowa */
+  .helpBtn{display:block;width:100%;margin-top:10px;background:linear-gradient(135deg,#efe6ff,#e3ece8);color:#5b3fa6;border:1px solid #d9cdf5;font-weight:700}
+  .helpBtn.small{width:auto;display:inline-block;margin-top:8px;padding:7px 12px;font-size:.85rem}
+  .helpBtn.wide{margin-top:8px}
+  .helpMini{background:#efe6ff;color:#5b3fa6}
+  @media (prefers-color-scheme: dark){ .helpBtn,.helpMini{background:linear-gradient(135deg,#2c2440,#1f2b27);color:#c9b6ff;border-color:#3c3158} }
+  .chat{display:flex;flex-direction:column;gap:12px;padding-bottom:6px}
+  .bub{border-radius:16px;padding:12px 14px;line-height:1.55;font-size:.95rem}
+  .bub.ai{background:var(--card);border:1px solid var(--border)}
+  .bub.me{align-self:flex-end;max-width:85%;background:var(--accent);color:var(--card);border-bottom-right-radius:4px;white-space:pre-wrap}
+  .bub h3{font-size:.98rem!important;text-transform:none!important;letter-spacing:0!important;color:var(--accent)!important;margin:16px 0 6px!important}
+  .bub h3:first-child{margin-top:0!important}
+  .bub p{margin:6px 0} .bub ul,.bub ol{margin:6px 0;padding-left:20px} .bub li{margin:3px 0}
+  .bub code{background:var(--accent-soft);border-radius:5px;padding:0 4px}
+  .hEx{display:flex;gap:8px;align-items:flex-start;background:var(--bg);border-radius:12px;padding:8px 10px;margin:6px 0}
+  .hExT{flex:1} .hExT .exPl{color:var(--muted);font-size:.9rem}
+  .hQ{background:var(--bg);border:1px dashed var(--border);border-radius:12px;padding:10px 12px;margin:8px 0}
+  .hSrc{margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);display:flex;flex-direction:column;gap:4px;font-size:.85rem}
+  .hSrc a{color:var(--accent);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hSug{width:100%;height:64px;border:0;margin-top:6px;background:transparent}
+  .typing{display:flex;align-items:center;gap:5px;color:var(--muted)}
+  .typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:dot 1.2s infinite}
+  .typing i:nth-child(2){animation-delay:.2s} .typing i:nth-child(3){animation-delay:.4s}
+  .typing span{margin-left:6px;font-size:.88rem}
+  @keyframes dot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+  .askBar{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom));background:var(--bg);padding:8px 0 calc(8px + env(safe-area-inset-bottom));margin-top:6px;border-top:1px solid var(--border)}
+  .askBar .quick{flex-wrap:nowrap;overflow-x:auto;margin:0 0 8px;scrollbar-width:none}
+  .askBar .quick .chip{white-space:nowrap;flex:none}
+  .askBar textarea{flex:1;resize:none;min-height:44px;max-height:140px;padding:11px 12px;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);font:inherit}
+  .askBar #hSend{width:48px;height:44px;padding:0;font-size:1.1rem}
+
   /* obrazki */
   .itemTop{display:flex;gap:12px;align-items:flex-start}
   .itemMain{flex:1;min-width:0}
@@ -532,7 +563,7 @@
 <!-- panel „Więcej” -->
 <div id="sheet" class="sheet" hidden>
   <div class="sheetBox" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
-    <div class="sheetHead"><div><small>💡 Więcej o</small><h2 id="sheetTitle"></h2></div><button class="ghost" id="sheetClose" aria-label="Zamknij">✕</button></div>
+    <div class="sheetHead"><div><small id="sheetKicker">💡 Więcej o</small><h2 id="sheetTitle"></h2></div><button class="ghost" id="sheetClose" aria-label="Zamknij">✕</button></div>
     <div id="sheetBody"></div>
   </div>
 </div>
@@ -1387,6 +1418,7 @@ function webLinks(en){
 }
 function openMore(id, force){
   const it = byId(id); if(!it) return;
+  help = null; $("sheetKicker").textContent = "💡 Więcej o";
   moreId = id;
   $("sheetTitle").textContent = it.en;
   $("sheet").hidden = false; document.body.style.overflow = "hidden";
@@ -1487,7 +1519,7 @@ async function pickImg(id, q){
   }catch(e){ if($("imgGrid")) $("imgGrid").innerHTML = `<div class="bad small" style="grid-column:1/-1">${esc(e.message)}</div>`; }
 }
 function closeMore(){
-  moreId = null;
+  moreId = null; help = null;
   $("sheet").classList.remove("open"); document.body.style.overflow = "";
   setTimeout(() => { if(!$("sheet").classList.contains("open")) $("sheet").hidden = true; }, 250);
 }
@@ -1605,6 +1637,7 @@ function renderUnit(n){
         ${(e.wzory||[]).length ? `<div class="wzory">${e.wzory.map((w,i) => `<div class="exRow"><div style="flex:1"><div>${esc(w.en)}</div><div class="exPl">${esc(w.pl)}</div></div><button class="small" data-wz="${i}">🔊</button></div>`).join("")}</div>` : ""}
         ${e.uwaga ? `<div class="fix">⚠️ ${esc(e.uwaga)}</div>` : ""}` : `<p class="muted">Kliknij „Ćwicz”, a Gemini krótko wyjaśni zasadę i ułoży 10 nowych ćwiczeń do tego tematu. Za każdym razem są inne.</p>`}
       <button class="primary wide" id="gStart">${g.tries ? "🔄 Nowe ćwiczenia (10)" : "✍️ Ćwicz (10 zadań)"}</button>
+      <button class="helpBtn wide" id="gHelp">🧠 Wytłumacz mi ten temat dokładniej${xdocs["_h_" + hkey("unit:" + n)] ? " · 💬" : ""}</button>
       <div class="row" style="margin-top:8px">
         ${n > 1 ? `<button class="small ghost" id="gPrevU" style="flex:1">‹ Unit ${n-1}</button>` : `<span style="flex:1"></span>`}
         <button class="small ghost" id="gDone" style="flex:1.4">${g.done ? "↩︎ Odznacz zaliczenie" : "✓ Oznacz jako zaliczony"}</button>
@@ -1614,6 +1647,7 @@ function renderUnit(n){
   $("gBack").onclick = () => { gView.unit = null; renderGrammar(); };
   box.querySelectorAll("[data-wz]").forEach(b => b.onclick = () => speak(e.wzory[+b.dataset.wz].en));
   $("gStart").onclick = () => startQuiz(n);
+  $("gHelp").onclick = () => openHelp({ key: "unit:" + n, title: `Unit ${n}: ${u.title}`, topic: u.title, sec: u.sec });
   $("gDone").onclick = () => saveGram(n, { done: !g.done }).catch(fail);
   if($("gPrevU")) $("gPrevU").onclick = () => openUnit(n - 1);
   if($("gNextU")) $("gNextU").onclick = () => openUnit(n + 1);
@@ -1704,6 +1738,7 @@ function renderQuiz(){
             ${x.typ === "wpisz" && x.odpowiedzi.length > 1 ? `<div class="small">Też poprawne: ${x.odpowiedzi.slice(1).map(esc).join(", ")}</div>` : ""}
             ${x.dlaczego ? `<div style="margin-top:4px">${md(x.dlaczego)}</div>` : ""}
             ${!ans && x.typ === "wpisz" && !q.review ? `<button class="link" id="qAppeal" style="margin-top:6px">🤔 Moja odpowiedź też chyba jest dobra</button>` : ""}
+            <button class="helpBtn" id="qHelp">🧠 Pomóż mi bardziej zrozumieć temat</button>
           </div>
           <div class="row" style="margin-top:12px">
             <button class="small" id="qSay">🔊 Odsłuchaj zdanie</button>
@@ -1731,6 +1766,11 @@ function renderQuiz(){
       const full = x.zdanie.replace(/_{2,}/, q.given[q.i]);
       $("qSay").onclick = () => speak(x.zdanie.replace(/_{2,}/, correctText));
       $("qGo").onclick = () => { q.i++; renderQuiz(); };
+      $("qHelp").onclick = () => {
+        const t = q.unit ? UNITS[q.unit].title : "";
+        const qq = { typ: x.typ, zdanie: x.zdanie, opcje: x.opcje || [], poprawna: x.poprawna, odpowiedzi: x.odpowiedzi || [], dlaczego: x.dlaczego || "", temat: t };
+        openHelp({ key: qHelpKey(qq), title: t || "To pytanie", q: qq, given: q.given[q.i], ok: ans });
+      };
       if($("qAppeal")) $("qAppeal").onclick = async () => {
         $("qAppeal").outerHTML = `<div class="small muted" id="qAppealRes" style="margin-top:6px">⏳ Pytam Gemini…</div>`;
         try{
@@ -2047,7 +2087,8 @@ function viewErrs(){
   if($("eFilt")) $("eFilt").onclick = e => { const b = e.target.closest("[data-f]"); if(b){ errFilter = b.dataset.f; viewErrs(); } };
   $("eList").onclick = e => {
     const b = e.target.closest("button"); if(!b) return;
-    const it = errs().find(x => x.id === (b.dataset.esay || b.dataset.emaster || b.dataset.edel)); if(!it) return;
+    const it = errs().find(x => x.id === (b.dataset.esay || b.dataset.emaster || b.dataset.edel || b.dataset.ehelp)); if(!it) return;
+    if(b.dataset.ehelp) return openHelp({ key: qHelpKey(it.q), title: it.q.temat || "To pytanie", q: it.q, given: it.twoja || "", ok: false });
     if(b.dataset.esay) speak(it.q.zdanie.replace(/_{2,}/, correctOf(it.q)));
     if(b.dataset.emaster) saveX(it.id, { mastered: !it.mastered, streak: it.mastered ? 0 : 3 }).catch(fail);
     if(b.dataset.edel && confirm("Usunąć to pytanie z banku błędów?")) delX(it.id).catch(fail);
@@ -2064,6 +2105,7 @@ function errCard(e){
     <div class="actions" style="align-items:center">
       <span class="dots" title="Dobre odpowiedzi z rzędu">${[0,1,2].map(i => `<i class="${i < s ? "on" : ""}"></i>`).join("")}</span>
       <span style="flex:1"></span>
+      <button class="small helpMini" data-ehelp="${e.id}" title="Pomóż mi zrozumieć">🧠${xdocs["_h_" + hkey(qHelpKey(q))] ? "💬" : ""}</button>
       <button class="small" data-esay="${e.id}">🔊</button>
       <button class="small knownBtn ${e.mastered ? "on" : ""}" data-emaster="${e.id}">${e.mastered ? "✓ Opanowane" : "Opanowane?"}</button>
       <button class="small danger" data-edel="${e.id}">Usuń</button>
@@ -2271,6 +2313,7 @@ function renderRun(){
           ${x.typ === "wpisz" && x.odpowiedzi.length > 1 ? `<div class="small">Też poprawne: ${x.odpowiedzi.slice(1).map(esc).join(", ")}</div>` : ""}
           ${showWhy ? `<div style="margin-top:4px">${md(x.dlaczego)}</div>` : ""}
           ${!ans && x.typ === "wpisz" && !r.review ? `<button class="link" id="rAppeal" style="margin-top:6px">🤔 Moja odpowiedź też chyba jest dobra</button>` : ""}
+          <button class="helpBtn" id="rHelp">🧠 Pomóż mi bardziej zrozumieć temat</button>
         </div>
         <div class="row" style="margin-top:12px">
           <button class="small" id="rSay">🔊 Odsłuchaj</button>
@@ -2299,6 +2342,7 @@ function renderRun(){
   box.querySelectorAll(".opt").forEach(b => b.onclick = () => submit(x.opcje[+b.dataset.o]));
   if(answered){
     $("rSay").onclick = () => speak(x.zdanie.replace(/_{2,}/, right));
+    $("rHelp").onclick = () => openHelp({ key: qHelpKey(x), title: x.temat || "To pytanie", q: x, given: r.given[r.i], ok: ans });
     $("rGo").onclick = () => { r.i++; renderRun(); };
     if($("rAppeal")) $("rAppeal").onclick = async () => {
       $("rAppeal").outerHTML = `<div class="small muted" id="rAppealRes" style="margin-top:6px">⏳ Sprawdzam…</div>`;
@@ -2333,9 +2377,14 @@ function renderRunEnd(head, bindQuit){
     ${wrong.length ? `<h3 class="secH">Błędy w tej próbie</h3>${wrong.map(w => `
       <div class="item"><div class="qSent" style="font-size:1rem">${filled(w.q.zdanie, correctOf(w.q))}</div>
         <div class="small"><span class="bad">✗ ${esc(w.given || "")}</span> → <span class="ok">✓ ${esc(correctOf(w.q))}</span></div>
-        ${w.q.dlaczego && r.expl !== "brak" ? `<div class="small muted" style="margin-top:4px">${md(w.q.dlaczego)}</div>` : ""}</div>`).join("")}` : ""}`;
+        ${w.q.dlaczego && r.expl !== "brak" ? `<div class="small muted" style="margin-top:4px">${md(w.q.dlaczego)}</div>` : ""}
+        <button class="helpBtn small" data-whelp="${r.questions.indexOf(w.q)}">🧠 Pomóż mi zrozumieć</button></div>`).join("")}` : ""}`;
   bindQuit();
   $("rReview").onclick = () => { r.review = true; r.i = 0; renderRun(); };
+  $("testsBox").querySelectorAll("[data-whelp]").forEach(b => b.onclick = () => {
+    const k = +b.dataset.whelp, q = r.questions[k];
+    openHelp({ key: qHelpKey(q), title: q.temat || "To pytanie", q, given: r.given[k], ok: false });
+  });
   $("rAgain").onclick = () => {
     if(r.kind === "err" && r.errIds){
       const pairs = shuffleArr(r.questions.map((q, k) => [q, r.errIds[k]]));
@@ -2641,6 +2690,260 @@ function filmWords(){
       enter(sc){ const b = sc.querySelector("#cAction"); if(b) b.onclick = () => { closeFilm(); showTab("learn"); }; } }
   ];
   playFilm(slides);
+}
+
+/* ================= 🧠 POMÓŻ MI ZROZUMIEĆ (Gemini + Google, rozmowa) ================= */
+async function geminiChat(contents, search){
+  const key = pref("geminiKey");
+  if(!key) throw new Error("NOKEY");
+  const order = [pref("geminiModel"), ...MODELS].filter((m, i, a) => m && a.indexOf(m) === i);
+  let lastErr;
+  for(const model of order){
+    const body = { contents, generationConfig: { temperature: 0.4, maxOutputTokens: 8192 } };
+    if(search) body.tools = [{ google_search: {} }];
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify(body)
+    });
+    const d = await r.json().catch(() => ({}));
+    const msg = (d.error && d.error.message) || ("HTTP " + r.status);
+    if(!r.ok){
+      if(/api key/i.test(msg)) throw new Error("Nieprawidłowy klucz API");
+      lastErr = new Error(r.status === 429 ? "Skończył się limit Gemini" : msg); lastErr.quota = r.status === 429;
+      if(r.status === 404 || r.status === 429 || r.status === 503 || r.status === 400) continue;
+      throw lastErr;
+    }
+    const c = d.candidates && d.candidates[0];
+    const text = c && c.content && c.content.parts ? c.content.parts.map(p => p.text || "").join("").trim() : "";
+    if(!text){ lastErr = new Error("Gemini nie odpowiedział — spróbuj jeszcze raz"); continue; }
+    const gm = (c && c.groundingMetadata) || {};
+    const seen = new Set();
+    const sources = (gm.groundingChunks || []).map(ch => ch && ch.web).filter(w => w && w.uri && !seen.has(w.title || w.uri) && seen.add(w.title || w.uri))
+      .slice(0, 8).map(w => ({ t: w.title || w.uri, u: w.uri }));
+    return { text, sources, suggest: (gm.searchEntryPoint && gm.searchEntryPoint.renderedContent) || "", searched: !!search && (sources.length > 0 || !!gm.webSearchQueries) };
+  }
+  throw lastErr || new Error("Brak modelu Gemini");
+}
+async function openaiText(msgs){
+  const key = pref("openaiKey");
+  if(!key) throw new Error("NOKEY");
+  const order = [pref("openaiModel"), ...OPENAI_MODELS].filter((m, i, a) => m && a.indexOf(m) === i);
+  let lastErr;
+  for(const model of order){
+    const body = { model, messages: msgs.map(m => ({ role: m.role === "model" ? "assistant" : "user", content: m.text })), reasoning_effort: "none" };
+    for(let a = 0; a < 3; a++){
+      const r = await fetch("https://api.openai.com/v1/chat/completions", { method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key }, body: JSON.stringify(body) });
+      const d = await r.json().catch(() => ({}));
+      const msg = (d.error && d.error.message) || ("HTTP " + r.status), code = (d.error && (d.error.code || d.error.type)) || "";
+      if(!r.ok){
+        if(r.status === 401) throw new Error("Nieprawidłowy klucz OpenAI");
+        if(code === "insufficient_quota" || /quota|billing/i.test(msg)) throw new Error("Brak środków na koncie OpenAI");
+        if(r.status === 400 && /reasoning/i.test(msg) && body.reasoning_effort){ delete body.reasoning_effort; continue; }
+        if(r.status === 404 || /model/i.test(msg)){ lastErr = new Error(msg); break; }
+        throw new Error("OpenAI: " + msg);
+      }
+      const text = d.choices && d.choices[0] && d.choices[0].message ? (d.choices[0].message.content || "").trim() : "";
+      if(text){ pref("openaiModel", model); return { text, sources: [], suggest: "", searched: false }; }
+      lastErr = new Error("ChatGPT nie odpowiedział"); break;
+    }
+  }
+  throw lastErr || new Error("Brak modelu OpenAI");
+}
+async function aiChat(msgs){
+  const contents = msgs.map(m => ({ role: m.role === "model" ? "model" : "user", parts: [{ text: m.text }] }));
+  const g = !!pref("geminiKey"), o = !!pref("openaiKey"), eng = aiEngine();
+  if(g && eng !== "openai"){
+    try{ return await geminiChat(contents, true); }                       // z wyszukiwaniem w Google
+    catch(e){ if(e.message === "Nieprawidłowy klucz API") throw e; }
+    try{ return await geminiChat(contents, false); }                      // zapas: bez wyszukiwania
+    catch(e){ if(!o || eng === "gemini") throw e; toast("Gemini nie odpowiada — używam ChatGPT"); }
+  }
+  if(o) return openaiText(msgs);
+  throw new Error("NOKEY");
+}
+
+/* ---------- prosty Markdown + przykłady (EN:/PL:) + zadania (Q: … || … || …) ---------- */
+let helpExs = [], helpQs = [];
+function inlineMd(s){
+  return esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/(^|[\s(])\*(?!\s)(.+?)\*(?=[\s).,!?:;]|$)/g, "$1<i>$2</i>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+}
+function renderHelpMd(text){
+  const out = []; let list = null;
+  const close = () => { if(list){ out.push(`</${list}>`); list = null; } };
+  const lines = String(text || "").replace(/\r/g, "").split("\n");
+  for(let raw of lines){
+    const line = raw.trim();
+    if(!line){ close(); continue; }
+    let m;
+    if((m = line.match(/^#{1,6}\s+(.+)/))){ close(); out.push(`<h3>${inlineMd(m[1].replace(/\*\*/g, ""))}</h3>`); continue; }
+    if((m = line.match(/^(?:[-*]\s*)?\**EN\**\s*:\s*(.+)/i))){
+      close(); m[1] = m[1].replace(/^\*+\s*/, ""); const k = helpExs.push({ en: m[1].replace(/\*\*/g, "").trim(), pl: "" }) - 1;
+      out.push(`<div class="hEx" data-exk="${k}"><div class="hExT"><div>${inlineMd(m[1])}</div><div class="exPl" data-plk="${k}"></div></div>
+        <div class="exBtns"><button class="small" data-hsay="${k}">🔊</button><button class="small" data-hadd="${k}" title="Dodaj do moich słówek">＋</button></div></div>`);
+      continue;
+    }
+    if((m = line.match(/^(?:[-*]\s*)?\**PL\**\s*:\s*(.+)/i)) && helpExs.length){
+      m[1] = m[1].replace(/^\*+\s*/, ""); const k = helpExs.length - 1; helpExs[k].pl = m[1].replace(/\*\*/g, "").trim();
+      const html = out.join("");
+      out.length = 0; out.push(html.replace(`<div class="exPl" data-plk="${k}"></div>`, `<div class="exPl" data-plk="${k}">${inlineMd(m[1])}</div>`));
+      continue;
+    }
+    if((m = line.match(/^(?:[-*\d.)\s]*)?\**Q\**\s*:\s*(.+?)\s*\|\|\s*(.+?)(?:\s*\|\|\s*(.+))?$/i))){
+      close(); m[1] = m[1].replace(/^\*+\s*/, ""); const k = helpQs.push({ zdanie: m[1].trim(), odp: m[2].split("/").map(s => s.trim()).filter(Boolean), why: (m[3] || "").trim() }) - 1;
+      out.push(`<div class="hQ" data-qk="${k}"><div class="qSent" style="font-size:1rem">${gap(helpQs[k].zdanie)}</div>
+        <div class="row" style="margin-top:8px"><input data-qin="${k}" placeholder="Twoja odpowiedź" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="small primary" data-qchk="${k}">Sprawdź</button></div>
+        <div class="hQres" data-qres="${k}"></div></div>`);
+      continue;
+    }
+    if((m = line.match(/^[-*•]\s+(.+)/))){ if(list !== "ul"){ close(); out.push("<ul>"); list = "ul"; } out.push(`<li>${inlineMd(m[1])}</li>`); continue; }
+    if((m = line.match(/^\d+[.)]\s+(.+)/))){ if(list !== "ol"){ close(); out.push("<ol>"); list = "ol"; } out.push(`<li>${inlineMd(m[1])}</li>`); continue; }
+    close(); out.push(`<p>${inlineMd(line)}</p>`);
+  }
+  close();
+  return out.join("");
+}
+
+/* ---------- otwieranie panelu i rozmowa ---------- */
+let help = null;
+function hkey(s){ let h = 5381; for(const ch of String(s)) h = ((h << 5) + h + ch.codePointAt(0)) | 0; return (h >>> 0).toString(36); }
+function qHelpKey(q){ return "q:" + norm(q.zdanie) + "|" + norm(correctOf(q) || ""); }
+
+function helpPrompt(c){
+  const fmt = (extra) => `Najpierw sprawdź w Google wiarygodne źródła (np. British Council, Cambridge Dictionary, Oxford Learner's Dictionaries) i na ich podstawie napisz wyczerpujące wyjaśnienie PO POLSKU w Markdownie, z nagłówkami „## ”:
+## O co chodzi — prostymi słowami, z porównaniem do języka polskiego
+${extra}## Reguła krok po kroku — wzór budowy zdania w **pogrubieniu**
+## Kiedy tego NIE używać — wyjątki i pułapki
+## Przykłady — 6 przykładów z codziennego życia, w tym pary porównawcze; każdy przykład w dwóch osobnych liniach: "EN: zdanie po angielsku" i "PL: tłumaczenie"
+## Typowe błędy Polaków
+## Sztuczka do zapamiętania
+## Mini-sprawdzian — dokładnie 3 linie w formacie: "Q: zdanie z jedną luką ___ || poprawna odpowiedź (warianty oddziel /) || krótkie wyjaśnienie po polsku"
+Zasady: bez tabel i bez linków w tekście, krótkie akapity i listy, kluczowe słowa pogrubione.
+W dalszej rozmowie odpowiadaj po polsku, konkretnie i na temat; przykłady zawsze w formacie "EN: …" / "PL: …", a zadania w formacie "Q: … || … || …". Jeśli uczeń o coś pyta, a nie masz pewności — sprawdź w Google.`;
+  if(c.q){
+    const q = c.q, right = correctOf(q);
+    const opts = q.typ === "wybor" && q.opcje.length ? `\nOpcje: ${q.opcje.map(o => `„${o}”`).join(", ")}.` : "";
+    const why = c.given ? (c.ok ? `## Dlaczego „${right}” jest dobrze — i czym różni się od pozostałych opcji\n` : `## Dlaczego „${right}”, a nie „${c.given}” — wyjaśnij konkretnie błąd ucznia\n`) : "";
+    return `Jesteś cierpliwym, konkretnym nauczycielem angielskiego dla Polaka (poziom ok. B1). Uczeń chce lepiej zrozumieć temat pytania z testu.
+Pytanie: „${q.zdanie}”.${opts}
+Poprawna odpowiedź: „${right}”.${c.given ? ` Uczeń odpowiedział: „${c.given}” (${c.ok ? "dobrze" : "źle"}).` : ""}${q.temat ? `\nTemat: ${q.temat}.` : ""}${q.dlaczego ? `\nKrótkie wyjaśnienie z testu: ${q.dlaczego}` : ""}
+${fmt(why)}`;
+  }
+  return `Jesteś cierpliwym, konkretnym nauczycielem angielskiego dla Polaka (poziom ok. B1). Uczeń chce dokładnie zrozumieć temat gramatyczny: „${c.topic}”${c.sec ? ` (dział: ${c.sec})` : ""}.
+${fmt("")}`;
+}
+
+function openSheet(kicker, title){
+  $("sheetKicker").textContent = kicker; $("sheetTitle").textContent = title;
+  $("sheet").hidden = false; document.body.style.overflow = "hidden";
+  requestAnimationFrame(() => $("sheet").classList.add("open"));
+}
+function openHelp(c){
+  if(!hasAI()){ toast("Dodaj klucz AI w Ustawieniach"); showTab("settings"); return; }
+  moreId = null;
+  const id = "_h_" + hkey(c.key);
+  const saved = xdocs[id];
+  help = { ...c, id, msgs: saved && Array.isArray(saved.msgs) ? saved.msgs.slice() : [], busy: false };
+  openSheet("🧠 Pomóż mi zrozumieć", c.title || "Temat");
+  renderHelp();
+  if(!help.msgs.length) sendHelp(helpPrompt(c), true);
+}
+const QUICK = [
+  ["🔁 Prościej", "Wyjaśnij to jeszcze prościej, jak komuś, kto dopiero zaczyna. Krótko i obrazowo."],
+  ["➕ Przykłady", "Daj mi 6 kolejnych przykładów z codziennego życia (format EN:/PL:), różnych od poprzednich."],
+  ["🇵🇱 Jak po polsku?", "Porównaj tę konstrukcję z językiem polskim — gdzie i dlaczego Polacy najczęściej się mylą?"],
+  ["✍️ Daj zadanie", "Daj mi 3 nowe zadania do sprawdzenia w formacie Q: … || … || … — od łatwego do trudnego."]
+];
+function renderHelp(){
+  if(!help) return;
+  helpExs = []; helpQs = [];
+  const visible = help.msgs.filter(m => !m.hidden);
+  $("sheetBody").innerHTML = `
+    <div class="chat" id="hChat">${visible.map(m => m.role === "user"
+      ? `<div class="bub me">${esc(m.text)}</div>`
+      : `<div class="bub ai">${renderHelpMd(m.text)}
+          ${m.sources && m.sources.length ? `<div class="hSrc"><b>🔎 Źródła z Google</b>${m.sources.map(s => `<a href="${esc(s.u)}" target="_blank" rel="noopener">${esc(s.t)}</a>`).join("")}</div>` : ""}
+          ${m.suggest ? `<iframe class="hSug" sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${esc(m.suggest)}"></iframe>` : ""}
+          ${m.searched === false ? `<div class="muted small" style="margin-top:6px">ℹ️ Bez wyszukiwania w Google — odpowiedź z wiedzy AI.</div>` : ""}
+        </div>`).join("")}
+      ${help.busy ? `<div class="bub ai typing"><i></i><i></i><i></i><span>${help.msgs.length <= 1 ? "Szukam w Google i piszę wyjaśnienie…" : "Myślę…"}</span></div>` : ""}
+      ${help.error ? `<div class="bub ai"><p class="bad">Nie udało się: ${esc(help.error)}</p><button class="small" id="hRetry">Spróbuj jeszcze raz</button></div>` : ""}
+    </div>
+    <div class="askBar">
+      <div class="chips quick">${QUICK.map((q, k) => `<button class="chip" data-quick="${k}" ${help.busy ? "disabled" : ""}>${q[0]}</button>`).join("")}</div>
+      <div class="row">
+        <textarea id="hIn" rows="1" placeholder="💬 Co Cię jeszcze gryzie? Zapytaj…" ${help.busy ? "disabled" : ""}></textarea>
+        <button class="primary" id="hSend" ${help.busy ? "disabled" : ""} aria-label="Wyślij">➤</button>
+      </div>
+      ${visible.length ? `<div class="row" style="justify-content:space-between;margin-top:4px">
+        <button class="ghost small" id="hReset">🔄 Nowe wyjaśnienie</button>
+        <button class="ghost small" id="hClear" ${visible.length > 1 ? "" : "disabled"}>🧹 Wyczyść pytania</button></div>` : ""}
+    </div>`;
+  const body = $("sheetBody");
+  body.querySelectorAll("[data-quick]").forEach(b => b.onclick = () => sendHelp(QUICK[+b.dataset.quick][1]));
+  const send = () => { const v = $("hIn").value.trim(); if(v) sendHelp(v); };
+  $("hSend").onclick = send;
+  $("hIn").addEventListener("keydown", e => { if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); send(); } });
+  $("hIn").addEventListener("input", () => { const t = $("hIn"); t.style.height = "auto"; t.style.height = Math.min(140, t.scrollHeight) + "px"; });
+  if($("hRetry")) $("hRetry").onclick = () => { help.error = null; const last = help.msgs[help.msgs.length - 1]; help.msgs.pop(); sendHelp(last.text, last.hidden); };
+  if($("hReset")) $("hReset").onclick = () => { if(!confirm("Napisać wyjaśnienie od nowa? Obecna rozmowa zniknie.")) return; help.msgs = []; sendHelp(helpPrompt(help), true); };
+  if($("hClear")) $("hClear").onclick = () => { help.msgs = help.msgs.slice(0, 2); saveHelp(); renderHelp(); };
+  body.querySelectorAll("[data-hsay]").forEach(b => b.onclick = () => speak(helpExs[+b.dataset.hsay].en));
+  body.querySelectorAll("[data-hadd]").forEach(b => b.onclick = async () => {
+    const x = helpExs[+b.dataset.hadd];
+    if(items.some(i => i.en.toLowerCase() === x.en.toLowerCase())){ toast("To zdanie już masz"); return; }
+    b.disabled = true; b.textContent = "✓";
+    try{ await store.add({ id: newId(), en: x.en, pl: x.pl, pron: "", exEn: "", exPl: "", pos: ["sent"], forms: "", emoji: "", foto: "", known: false, miss: 0, added: new Date().toISOString() }); toast("Dodano do słówek"); }
+    catch(e){ fail(e); }
+  });
+  body.querySelectorAll("[data-qchk]").forEach(b => {
+    const k = +b.dataset.qchk, inp = body.querySelector(`[data-qin="${k}"]`);
+    const check = async () => {
+      const q = helpQs[k], v = inp.value.trim(); if(!v){ inp.focus(); return; }
+      const ok = q.odp.some(a => norm(a) === norm(v));
+      inp.disabled = true; b.remove();
+      body.querySelector(`[data-qres="${k}"]`).innerHTML = `<div class="verdict ${ok ? "good" : "badBox"}"><b>${ok ? "✅ Dobrze!" : "❌ Poprawnie: " + esc(q.odp.join(" / "))}</b>${q.why ? `<div>${inlineMd(q.why)}</div>` : ""}
+        ${ok ? "" : `<button class="link" data-qerr="${k}" style="margin-top:4px">📸 Dodaj do „Moich błędów”</button>`}</div>`;
+      const eb = body.querySelector(`[data-qerr="${k}"]`);
+      if(eb) eb.onclick = async () => {
+        eb.disabled = true;
+        const n = await addErrors([{ q: { typ: "wpisz", zdanie: q.zdanie, opcje: [], poprawna: -1, odpowiedzi: q.odp, podpowiedz: "", dlaczego: q.why, temat: (help && (help.q && help.q.temat || help.topic)) || "" }, given: v }], "help").catch(fail);
+        eb.textContent = n ? "✓ Dodano" : "Już jest w banku";
+      };
+    };
+    b.onclick = check;
+    inp.addEventListener("keydown", e => { if(e.key === "Enter") check(); });
+  });
+}
+function saveHelp(){
+  if(!help) return;
+  const msgs = help.msgs.slice(-40).map(m => ({ role: m.role, text: m.text, ...(m.hidden ? { hidden: true } : {}),
+    ...(m.sources && m.sources.length ? { sources: m.sources } : {}), ...(m.suggest ? { suggest: m.suggest } : {}), ...(m.searched === false ? { searched: false } : {}) }));
+  saveX(help.id, { kind: "help", key: help.key, title: help.title || "", msgs, at: new Date().toISOString() }).catch(e => console.warn(e));
+}
+async function sendHelp(text, hidden){
+  if(!help || help.busy) return;
+  const h = help;
+  h.msgs.push({ role: "user", text, ...(hidden ? { hidden: true } : {}) });
+  h.busy = true; h.error = null;
+  renderHelp(); scrollHelp();
+  try{
+    const r = await aiChat(h.msgs);
+    h.msgs.push({ role: "model", text: r.text, sources: r.sources, suggest: r.suggest, searched: r.searched });
+    if(help === h) saveHelp();
+  }catch(e){
+    h.error = e.message === "NOKEY" ? "Brak klucza AI" : e.message;
+  }
+  h.busy = false;
+  if(help === h){ renderHelp(); scrollHelp(true); }
+}
+function scrollHelp(toAnswer){
+  const box = $("sheet").querySelector(".sheetBox"), bubs = document.querySelectorAll("#hChat .bub");
+  const last = bubs[bubs.length - 1];
+  if(!box || !last) return;
+  // nowa odpowiedź: pokaż jej początek; w trakcie pisania: przewiń na dół
+  if(toAnswer) box.scrollTop = Math.max(0, last.offsetTop - 70);
+  else box.scrollTop = box.scrollHeight;
 }
 
 /* ================= USTAWIENIA ================= */
