@@ -794,7 +794,33 @@ document.querySelectorAll("nav button").forEach(b => b.onclick = () => showTab(b
 $("gearBtn").onclick = () => showTab($("tab-settings").classList.contains("on") ? (pref("lastTab") || "list") : "settings");
 
 /* ================= GEMINI ================= */
-const MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash"];
+const MODELS = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.5-flash", "gemini-3.6-flash"];
+function gemDead(){ try{ return JSON.parse(pref("geminiDead") || "[]"); }catch(e){ return []; } }
+function gemOrder(){
+  const dead = gemDead();
+  let order = [pref("geminiModel"), ...MODELS].filter((m, i, a) => m && a.indexOf(m) === i && !dead.includes(m));
+  if(!order.length){ pref("geminiDead", null); order = MODELS.slice(); }       // wszystko „martwe”? spróbuj od nowa
+  return order;
+}
+function gemMarkDead(m){ const d = gemDead(); if(!d.includes(m)){ d.push(m); pref("geminiDead", JSON.stringify(d)); } if(pref("geminiModel") === m) pref("geminiModel", null); }
+function gemKind(status, msg){
+  if(status === 429 || /quota|exhausted|rate.?limit/i.test(msg)) return "quota";
+  if(status >= 500) return "busy";
+  if(status === 404 || /no longer available|deprecated|not found|is not supported for generateContent/i.test(msg)) return "gone";
+  return "other";
+}
+function gemFinalError(errs){
+  const kind = ["quota", "busy", "other", "gone"].find(k => errs.some(e => e.kind === k)) || "other";
+  const first = errs.find(e => e.kind === kind);
+  const err = new Error({
+    quota: "Na dziś skończył się darmowy limit Gemini — odnowi się ok. 9:00 rano.",
+    busy: "Gemini jest teraz przeciążony — spróbuj za chwilę.",
+    gone: "Żaden model Gemini nie odpowiada dla tego klucza — sprawdź klucz w Ustawieniach.",
+    other: first ? first.msg : "Gemini nie odpowiada — spróbuj jeszcze raz."
+  }[kind]);
+  err.quota = kind === "quota";
+  return err;
+}
 const PROMPT = `Jesteś pomocnikiem do nauki angielskiego dla Polaka. Dostajesz wpis użytkownika: słowo, zwrot albo zdanie.
 Wpis może mieć literówki i błędy gramatyczne albo być napisany po polsku.
 Zwróć WYŁĄCZNIE obiekt JSON z polami:
@@ -852,8 +878,8 @@ function parseLoose(raw){
 async function geminiJSON(prompt, temperature, schema, images){
   const key = pref("geminiKey");
   if(!key) throw new Error("NOKEY");
-  const order = [pref("geminiModel"), ...MODELS].filter((m,i,a) => m && a.indexOf(m) === i);
-  let lastErr;
+  const order = gemOrder();
+  const errs = [];
   for(const model of order){
     for(let attempt = 0; attempt < 2; attempt++){
       const cfg = { responseMimeType: "application/json", temperature: temperature ?? 0.2, maxOutputTokens: 8192 };
@@ -869,9 +895,12 @@ async function geminiJSON(prompt, temperature, schema, images){
         if(/api key/i.test(msg)) throw new Error("Nieprawidłowy klucz API");
         // model nie obsługuje schematu – wyłącz schemat i spróbuj jeszcze raz
         if(r.status === 400 && /schema/i.test(msg) && !geminiJSON.noSchema){ geminiJSON.noSchema = true; attempt--; continue; }
-        // model niedostępny / bez darmowego limitu – próbuj następnego
-        if(r.status === 404 || r.status === 429 || r.status === 503 || (r.status === 400 && /model/i.test(msg))){ lastErr = new Error(r.status === 429 ? "Skończył się dzienny limit Gemini" : msg); lastErr.quota = r.status === 429; break; }
-        throw new Error(msg);
+        const kind = gemKind(r.status, msg);
+        errs.push({ kind, msg });
+        if(kind === "gone") gemMarkDead(model);
+        if(kind === "busy" && attempt === 0){ await new Promise(s => setTimeout(s, 1200)); continue; }   // przeciążony — chwila i jeszcze raz
+        if(kind === "other" && r.status !== 400) throw new Error(msg);
+        break;                                                                       // następny model
       }
       const c = d.candidates && d.candidates[0];
       const raw = c && c.content && c.content.parts ? c.content.parts.map(p => p.text || "").join("") : "";
@@ -881,13 +910,11 @@ async function geminiJSON(prompt, temperature, schema, images){
         return json;
       }catch(e){
         // zepsuta albo ucięta odpowiedź — jeszcze jedna próba, potem następny model
-        lastErr = new Error(c && c.finishReason === "MAX_TOKENS" ? "Odpowiedź Gemini była za długa i się ucięła" : "Gemini odpowiedział w złym formacie");
+        errs.push({ kind: "other", msg: c && c.finishReason === "MAX_TOKENS" ? "Odpowiedź Gemini była za długa i się ucięła — spróbuj jeszcze raz." : "Gemini odpowiedział w złym formacie — spróbuj jeszcze raz." });
       }
     }
   }
-  const err = new Error((lastErr ? lastErr.message : "Brak modelu") + " — spróbuj jeszcze raz.");
-  err.quota = !!(lastErr && lastErr.quota);
-  throw err;
+  throw gemFinalError(errs);
 }
 
 /* ================= OPENAI (ChatGPT) ================= */
@@ -1736,6 +1763,7 @@ function renderQuiz(){
           <div class="verdict ${ans ? "good" : "badBox"}">
             <b>${ans ? "✅ Dobrze!" : "❌ Poprawnie: " + esc(correctText)}</b>
             ${x.typ === "wpisz" && x.odpowiedzi.length > 1 ? `<div class="small">Też poprawne: ${x.odpowiedzi.slice(1).map(esc).join(", ")}</div>` : ""}
+            ${!ans ? typoHint(x, q.given[q.i]) : ""}
             ${x.dlaczego ? `<div style="margin-top:4px">${md(x.dlaczego)}</div>` : ""}
             ${!ans && x.typ === "wpisz" && !q.review ? `<button class="link" id="qAppeal" style="margin-top:6px">🤔 Moja odpowiedź też chyba jest dobra</button>` : ""}
             <button class="helpBtn" id="qHelp">🧠 Pomóż mi bardziej zrozumieć temat</button>
@@ -1747,9 +1775,7 @@ function renderQuiz(){
           </div>` : ""}
       </div>`;
     const submit = (given) => {
-      const ok = x.typ === "wpisz"
-        ? x.odpowiedzi.some(a => norm(a) === norm(given))
-        : given === x.opcje[x.poprawna];
+      const ok = answerOk(x, given);
       q.given = q.given || []; q.given[q.i] = given; q.res[q.i] = ok;
       renderQuiz();
     };
@@ -1813,6 +1839,38 @@ function fmtDate(iso){
   const d = new Date(iso);
   return d.toLocaleDateString("pl-PL", { day:"numeric", month:"short" }) + ", " + d.toLocaleTimeString("pl-PL", { hour:"2-digit", minute:"2-digit" });
 }
+function answerParts(q){ const p = String(q.zdanie || "").split(/_{2,}/); return { before: norm(p[0] || "").split(" ").filter(Boolean), after: norm(p[1] || "").split(" ").filter(Boolean) }; }
+function trimEcho(q, given){
+  // „to getting up” przy zdaniu „… used ___ up early” → „to getting” (słowo „up” już stoi za luką)
+  let w = norm(given).split(" ").filter(Boolean);
+  const { before, after } = answerParts(q);
+  for(let k = Math.min(3, after.length); k > 0; k--) if(w.length > k && w.slice(-k).join(" ") === after.slice(0, k).join(" ")){ w = w.slice(0, -k); break; }
+  for(let k = Math.min(3, before.length); k > 0; k--) if(w.length > k && w.slice(0, k).join(" ") === before.slice(-k).join(" ")){ w = w.slice(k); break; }
+  return w.join(" ");
+}
+function answerOk(q, given){
+  if(q.typ !== "wpisz") return given === q.opcje[q.poprawna];
+  const alts = (q.odpowiedzi || []).map(norm), g = norm(given);
+  return alts.includes(g) || alts.includes(trimEcho(q, given));
+}
+function lev(a, b){
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for(let j = 1; j <= b.length; j++) d[0][j] = j;
+  for(let i = 1; i <= a.length; i++) for(let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+function typoHint(q, given){
+  if(q.typ !== "wpisz" || !given) return "";
+  const g = trimEcho(q, given).split(" ");
+  for(const alt of (q.odpowiedzi || []).map(a => norm(a).split(" "))){
+    if(alt.length !== g.length) continue;
+    const diff = alt.map((w, k) => [g[k], w]).filter(([x, y]) => x !== y);
+    if(diff.length === 1 && lev(diff[0][0], diff[0][1]) <= (diff[0][1].length > 5 ? 2 : 1))
+      return `<div class="small" style="margin-top:4px">🔎 Wygląda na literówkę: <b>${esc(diff[0][0])}</b> → <b>${esc(diff[0][1])}</b></div>`;
+  }
+  return "";
+}
 function plural(n, one, few, many){ const d = n % 10, dd = n % 100; return n + " " + (n === 1 ? one : (d >= 2 && d <= 4 && !(dd >= 12 && dd <= 14)) ? few : many); }
 function pct(ok, total){ return total ? Math.round(ok / total * 100) : 0; }
 function pctCls(p){ return p >= 80 ? "pGood" : p >= 50 ? "pMid" : "pBad"; }
@@ -1875,7 +1933,7 @@ const Q_FORMAT = `{"tytul":"krótki tytuł po polsku","pytania":[
  {"typ":"wybor","zdanie":"zdanie z jedną luką ___","opcje":["…","…","…","…"],"poprawna":0,"odpowiedzi":[],"podpowiedz":"","dlaczego":"…","temat":"nazwa zagadnienia po angielsku"},
  {"typ":"wpisz","zdanie":"zdanie z jedną luką ___","opcje":[],"poprawna":-1,"odpowiedzi":["każdy poprawny wariant, także ze skrótami"],"podpowiedz":"co wpisać, np. (go)","dlaczego":"…","temat":"…"}]}`;
 const Q_RULES = `Zasady: własne, oryginalne zdania z codziennego życia (praca, dom, znajomi, podróże, filmy); jedna luka ___ w każdym zdaniu;
-w „wybor” 4 opcje, dokładnie jedna poprawna, poprawna na losowej pozycji; w „wpisz” luka ma 1–4 słowa, a „odpowiedzi” zawierają wszystkie naturalne poprawne warianty.`;
+w „wybor” 4 opcje, dokładnie jedna poprawna, poprawna na losowej pozycji; w „wpisz” luka ma 1–4 słowa, a „odpowiedzi” zawierają wszystkie naturalne poprawne warianty; słowa, które są w zdaniu tuż przed luką lub za nią, NIE mogą wchodzić w skład odpowiedzi.`;
 
 function testPrompt(c, n, avoid){
   const topic = c.custom ? c.custom : c.topic === "mix" ? "mieszany — różne zagadnienia typowe dla tego poziomu"
@@ -2311,6 +2369,7 @@ function renderRun(){
         <div class="verdict ${ans ? "good" : "badBox"}">
           <b>${ans ? "✅ Dobrze!" : "❌ Poprawnie: " + esc(right)}</b>
           ${x.typ === "wpisz" && x.odpowiedzi.length > 1 ? `<div class="small">Też poprawne: ${x.odpowiedzi.slice(1).map(esc).join(", ")}</div>` : ""}
+          ${!ans ? typoHint(x, r.given[r.i]) : ""}
           ${showWhy ? `<div style="margin-top:4px">${md(x.dlaczego)}</div>` : ""}
           ${!ans && x.typ === "wpisz" && !r.review ? `<button class="link" id="rAppeal" style="margin-top:6px">🤔 Moja odpowiedź też chyba jest dobra</button>` : ""}
           <button class="helpBtn" id="rHelp">🧠 Pomóż mi bardziej zrozumieć temat</button>
@@ -2323,7 +2382,7 @@ function renderRun(){
     </div>`;
   bindQuit();
   const submit = (given) => {
-    const ok = x.typ === "wpisz" ? x.odpowiedzi.some(a => norm(a) === norm(given)) : given === x.opcje[x.poprawna];
+    const ok = answerOk(x, given);
     r.given[r.i] = given; r.res[r.i] = ok;
     if(r.kind === "err" && r.errIds){             // postęp w banku błędów zapisuje się od razu
       const id = r.errIds[r.i], e = xdocs[id];
@@ -2696,8 +2755,8 @@ function filmWords(){
 async function geminiChat(contents, search){
   const key = pref("geminiKey");
   if(!key) throw new Error("NOKEY");
-  const order = [pref("geminiModel"), ...MODELS].filter((m, i, a) => m && a.indexOf(m) === i);
-  let lastErr;
+  const order = gemOrder();
+  const errs = [];
   for(const model of order){
     const body = { contents, generationConfig: { temperature: 0.4, maxOutputTokens: 8192 } };
     if(search) body.tools = [{ google_search: {} }];
@@ -2708,20 +2767,22 @@ async function geminiChat(contents, search){
     const msg = (d.error && d.error.message) || ("HTTP " + r.status);
     if(!r.ok){
       if(/api key/i.test(msg)) throw new Error("Nieprawidłowy klucz API");
-      lastErr = new Error(r.status === 429 ? "Skończył się limit Gemini" : msg); lastErr.quota = r.status === 429;
-      if(r.status === 404 || r.status === 429 || r.status === 503 || r.status === 400) continue;
-      throw lastErr;
+      const kind = gemKind(r.status, msg);
+      errs.push({ kind, msg });
+      if(kind === "gone") gemMarkDead(model);
+      if(kind === "other" && r.status !== 400) throw new Error(msg);
+      continue;
     }
     const c = d.candidates && d.candidates[0];
     const text = c && c.content && c.content.parts ? c.content.parts.map(p => p.text || "").join("").trim() : "";
-    if(!text){ lastErr = new Error("Gemini nie odpowiedział — spróbuj jeszcze raz"); continue; }
+    if(!text){ errs.push({ kind: "other", msg: "Gemini nie odpowiedział — spróbuj jeszcze raz." }); continue; }
     const gm = (c && c.groundingMetadata) || {};
     const seen = new Set();
     const sources = (gm.groundingChunks || []).map(ch => ch && ch.web).filter(w => w && w.uri && !seen.has(w.title || w.uri) && seen.add(w.title || w.uri))
       .slice(0, 8).map(w => ({ t: w.title || w.uri, u: w.uri }));
     return { text, sources, suggest: (gm.searchEntryPoint && gm.searchEntryPoint.renderedContent) || "", searched: !!search && (sources.length > 0 || !!gm.webSearchQueries) };
   }
-  throw lastErr || new Error("Brak modelu Gemini");
+  throw gemFinalError(errs);
 }
 async function openaiText(msgs){
   const key = pref("openaiKey");
@@ -2900,7 +2961,7 @@ function renderHelp(){
     const k = +b.dataset.qchk, inp = body.querySelector(`[data-qin="${k}"]`);
     const check = async () => {
       const q = helpQs[k], v = inp.value.trim(); if(!v){ inp.focus(); return; }
-      const ok = q.odp.some(a => norm(a) === norm(v));
+      const ok = answerOk({ typ: "wpisz", zdanie: q.zdanie, odpowiedzi: q.odp }, v);
       inp.disabled = true; b.remove();
       body.querySelector(`[data-qres="${k}"]`).innerHTML = `<div class="verdict ${ok ? "good" : "badBox"}"><b>${ok ? "✅ Dobrze!" : "❌ Poprawnie: " + esc(q.odp.join(" / "))}</b>${q.why ? `<div>${inlineMd(q.why)}</div>` : ""}
         ${ok ? "" : `<button class="link" data-qerr="${k}" style="margin-top:4px">📸 Dodaj do „Moich błędów”</button>`}</div>`;
