@@ -188,6 +188,18 @@
   .verdict.badBox{background:var(--danger-soft)}
   .big{font-size:2.4rem}
 
+  /* licznik AI */
+  .uRow{padding:10px 0;border-bottom:1px solid var(--border)}
+  .uRow:last-of-type{border-bottom:none}
+  .uName{font-weight:700}
+  .uNums{display:flex;gap:14px;font-size:.92rem;margin-top:2px;flex-wrap:wrap}
+  .uChart{display:flex;gap:6px;align-items:flex-end;height:90px;margin:14px 0 6px}
+  .uCol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%}
+  .uCol span{font-size:.7rem;color:var(--muted)}
+  .uBar{flex:1;width:100%;max-width:28px;display:flex;flex-direction:column-reverse;border-radius:6px 6px 0 0;overflow:hidden;background:var(--bg)}
+  .uBar .g{background:var(--good)} .uBar .b{background:var(--danger)}
+  .uBar i{display:block;width:100%}
+
   /* pomoc / rozmowa */
   .helpBtn{display:block;width:100%;margin-top:10px;background:linear-gradient(135deg,#efe6ff,#e3ece8);color:#5b3fa6;border:1px solid #d9cdf5;font-weight:700}
   .helpBtn.small{width:auto;display:inline-block;margin-top:8px;padding:7px 12px;font-size:.85rem}
@@ -530,6 +542,11 @@
         <button class="small" id="oSave">Zapisz</button>
       </div>
       <div class="status" id="oStatus"></div>
+    </div>
+
+    <div class="card">
+      <h2>📊 Zużycie AI dziś</h2>
+      <div id="usageBox"></div>
     </div>
 
     <div class="card">
@@ -899,6 +916,7 @@ async function geminiJSON(prompt, temperature, schema, images){
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, ...(images || []).map(im => ({ inline_data: { mime_type: im.mime, data: im.b64 } }))] }], generationConfig: cfg })
       });
       const d = await r.json().catch(() => ({}));
+      track("gemini", r.status, d.usageMetadata && d.usageMetadata.totalTokenCount);
       const msg = (d.error && d.error.message) || ("HTTP " + r.status);
       if(!r.ok){
         if(/api key/i.test(msg)) throw new Error("Nieprawidłowy klucz API");
@@ -950,6 +968,7 @@ async function openaiJSON(prompt, images){
         body: JSON.stringify(body)
       });
       const d = await r.json().catch(() => ({}));
+      track("openai", r.status, d.usage && d.usage.total_tokens);
       const msg = (d.error && d.error.message) || ("HTTP " + r.status);
       const code = (d.error && (d.error.code || d.error.type)) || "";
       if(!r.ok){
@@ -972,6 +991,69 @@ async function openaiJSON(prompt, images){
 }
 
 /* ================= WYBÓR SILNIKA AI ================= */
+/* ================= LICZNIK ZUŻYCIA AI ================= */
+// „dzień” liczony jak u Google: od północy w Kalifornii (u nas ok. 9:00)
+function usageDay(d){ return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(d || new Date()); }
+function track(eng, status, tokens, headers, search){
+  try{
+    const day = usageDay();
+    const field = status >= 200 && status < 300 ? "ok" : status === 429 ? "e429" : status >= 500 ? "e5xx" : "eOther";
+    const patch = { [field]: 1 };
+    if(tokens) patch.tokens = tokens;
+    if(search && field === "ok") patch.search = 1;
+    if(field !== "ok") pref("usageLastErr", JSON.stringify({ eng, status, at: new Date().toISOString() }));
+    if(headers && headers.get){
+      const rem = headers.get("x-ratelimit-remaining-requests"), lim = headers.get("x-ratelimit-limit-requests");
+      if(rem != null && lim != null) pref("groqRate", JSON.stringify({ rem: +rem, lim: +lim, reset: headers.get("x-ratelimit-reset-requests") || "", at: new Date().toISOString() }));
+    }
+    // od razu lokalnie (żeby licznik był aktualny), w tle do bazy (wspólny dla wszystkich urządzeń)
+    const u = xdocs._usage = xdocs._usage || {};
+    const e = (u[day] = u[day] || {})[eng] = u[day][eng] || {};
+    Object.entries(patch).forEach(([k, v]) => e[k] = (e[k] || 0) + v);
+    if(cloud) setDoc(doc(col, "_usage"), { [day]: { [eng]: Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, increment(v)])) } }, { merge: true }).catch(() => {});
+    else { try{ localStorage.setItem("moj-angielski-x", JSON.stringify(xdocs)); }catch(err){} }
+    if($("tab-settings").classList.contains("on")) renderUsage();
+  }catch(err){ console.warn(err); }
+}
+function fmtTok(n){ return !n ? "0" : n < 1000 ? String(n) : n < 1e6 ? (n / 1000).toFixed(n < 1e4 ? 1 : 0).replace(".", ",") + " tys." : (n / 1e6).toFixed(1).replace(".", ",") + " mln"; }
+function renderUsage(){
+  const box = $("usageBox"); if(!box) return;
+  const u = xdocs._usage || {}, today = u[usageDay()] || {};
+  const engines = ["gemini", "groq", "openai"].filter(e => today[e] || pref({ gemini: "geminiKey", groq: "groqKey", openai: "openaiKey" }[e]));
+  const row = e => {
+    const x = today[e] || {}, bad = (x.e429 || 0) + (x.e5xx || 0) + (x.eOther || 0);
+    const detail = [x.e429 ? `limit: ${x.e429}` : "", x.e5xx ? `przeciążenie: ${x.e5xx}` : "", x.eOther ? `inne: ${x.eOther}` : ""].filter(Boolean).join(" · ");
+    let extra = "";
+    if(e === "gemini" && x.search) extra = `<div class="muted small">🔎 wyszukiwań w Google: ${x.search}</div>`;
+    if(e === "groq"){
+      let g = null; try{ g = JSON.parse(pref("groqRate") || "null"); }catch(err){}
+      if(g && usageDay(new Date(g.at)) === usageDay()) extra = `<div class="muted small">Groq podaje: zostało <b>${g.rem}</b> z ${g.lim} zapytań dziennie (dla modelu ${esc(pref("groqModel") || "")})</div>`;
+    }
+    return `<div class="uRow">
+      <div class="uName">${ENGINE_NAMES[e]}${e === "openai" ? ` <span class="muted small">(płatne)</span>` : ""}</div>
+      <div class="uNums"><span class="ok">✓ ${x.ok || 0}</span><span class="${bad ? "bad" : "muted"}">✗ ${bad}</span><span class="muted">${fmtTok(x.tokens)} tokenów</span></div>
+      ${detail ? `<div class="small ${x.e429 ? "bad" : "muted"}">${detail}</div>` : ""}${extra}
+    </div>`;
+  };
+  // 7 dni
+  const days = []; for(let k = 6; k >= 0; k--) days.push(usageDay(new Date(Date.now() - k * 864e5)));
+  const tot = d => ["gemini", "groq", "openai"].reduce((s, e) => { const x = (u[d] || {})[e] || {}; s.ok += x.ok || 0; s.bad += (x.e429 || 0) + (x.e5xx || 0) + (x.eOther || 0); return s; }, { ok: 0, bad: 0 });
+  const totals = days.map(tot), max = Math.max(1, ...totals.map(t => t.ok + t.bad));
+  let last = null; try{ last = JSON.parse(pref("usageLastErr") || "null"); }catch(err){}
+  const lastTxt = last ? `${ENGINE_NAMES[last.eng] || last.eng}: ${{ 429: "limit (429)", 503: "przeciążenie (503)", 404: "brak modelu (404)" }[last.status] || "błąd " + last.status} · ${fmtDate(last.at)}` : "";
+  box.innerHTML = `
+    <p>Zapytania tej aplikacji <b>od dzisiejszej 9:00</b> (wtedy Google zeruje dzienny limit Gemini). Licznik jest wspólny dla wszystkich Twoich urządzeń.</p>
+    ${engines.length ? engines.map(row).join("") : `<p class="muted">Dziś jeszcze nic.</p>`}
+    <div class="uChart">${totals.map((t, k) => `<div class="uCol" title="${days[k]}: ✓ ${t.ok} · ✗ ${t.bad}">
+        <div class="uBar"><i class="g" style="height:${t.ok / max * 100}%"></i><i class="b" style="height:${t.bad / max * 100}%"></i></div>
+        <span>${k === 6 ? "dziś" : new Date(days[k] + "T12:00:00").toLocaleDateString("pl-PL", { weekday: "short" })}</span></div>`).join("")}</div>
+    <div class="muted small" style="text-align:center">ostatnie 7 dni · <span class="ok">■</span> udane · <span class="bad">■</span> odrzucone</div>
+    ${lastTxt ? `<p class="small" style="margin-top:10px">Ostatni błąd: <b>${esc(lastTxt)}</b></p>` : ""}
+    <p class="small">✗ <b>limit</b> = za dużo zapytań (na minutę albo na dzień) · <b>przeciążenie</b> = problem po stronie Google, mija sam.
+      Dokładne limity Gemini zobaczysz w <a href="https://aistudio.google.com/" target="_blank" rel="noopener">AI Studio</a> → Usage / Rate limits.
+      Pamiętaj, że inne aplikacje z kluczem z tego samego projektu Google zużywają tę samą pulę.</p>`;
+}
+
 /* ================= GROQ (darmowe, OpenAI-zgodne API) ================= */
 const GROQ_URL = "https://api.groq.com/openai/v1";
 const GROQ_MODELS = ["openai/gpt-oss-120b", "llama-3.3-70b-versatile", "qwen/qwen3.8-27b", "openai/gpt-oss-20b", "llama-3.1-8b-instant"];
@@ -1004,6 +1086,7 @@ async function groqCall(messages, json){
       const r = await fetch(GROQ_URL + "/chat/completions", { method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key }, body: JSON.stringify(body) });
       const d = await r.json().catch(() => ({}));
+      track("groq", r.status, d.usage && d.usage.total_tokens, r.headers);
       const msg = (d.error && d.error.message) || ("HTTP " + r.status);
       if(!r.ok){
         if(r.status === 401) throw new Error("Nieprawidłowy klucz Groq");
@@ -1913,7 +1996,10 @@ async function delX(id){
   if(!cloud){ try{ localStorage.setItem("moj-angielski-x", JSON.stringify(xdocs)); }catch(e){} }
   extraChanged();
 }
-function extraChanged(){ if($("tab-tests").classList.contains("on") && !tRun && !tScreen) renderTests(); }
+function extraChanged(){
+  if($("tab-tests").classList.contains("on") && !tRun && !tScreen) renderTests();
+  if($("tab-settings").classList.contains("on")) renderUsage();
+}
 const tests = () => Object.entries(xdocs).filter(([id]) => id.startsWith("_t_")).map(([id, d]) => ({ id, ...d })).sort((a,b) => (b.created||"").localeCompare(a.created||""));
 const errs  = () => Object.entries(xdocs).filter(([id]) => id.startsWith("_e_")).map(([id, d]) => ({ id, ...d })).sort((a,b) => (b.added||"").localeCompare(a.added||""));
 const hist  = () => ((xdocs._historia && xdocs._historia.list) || []).slice().sort((a,b) => (b.at||"").localeCompare(a.at||""));
@@ -2848,6 +2934,7 @@ async function geminiChat(contents, search){
       method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify(body)
     });
     const d = await r.json().catch(() => ({}));
+    track("gemini", r.status, d.usageMetadata && d.usageMetadata.totalTokenCount, null, search);
     const msg = (d.error && d.error.message) || ("HTTP " + r.status);
     if(!r.ok){
       if(/api key/i.test(msg)) throw new Error("Nieprawidłowy klucz API");
@@ -2879,6 +2966,7 @@ async function openaiText(msgs){
       const r = await fetch("https://api.openai.com/v1/chat/completions", { method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key }, body: JSON.stringify(body) });
       const d = await r.json().catch(() => ({}));
+      track("openai", r.status, d.usage && d.usage.total_tokens);
       const msg = (d.error && d.error.message) || ("HTTP " + r.status), code = (d.error && (d.error.code || d.error.type)) || "";
       if(!r.ok){
         if(r.status === 401) throw new Error("Nieprawidłowy klucz OpenAI");
@@ -3185,6 +3273,7 @@ ${part.map((it, k) => `${k}. ${it.en}${it.pl ? " (" + it.pl + ")" : ""}`).join("
 
 function renderSettings(){
   renderInstall();
+  renderUsage();
   renderPosBox();
   if(cloud){
     $("dbInfo").innerHTML = `Połączono z Firebase (<b>${esc(firebaseConfig.projectId)}</b>, kolekcja „${COLLECTION}”). Słówka są te same na każdym urządzeniu.`;
