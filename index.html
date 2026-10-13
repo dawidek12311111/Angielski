@@ -503,8 +503,9 @@
       <p>Klucze zapisują się tylko w tej przeglądarce — nie trafiają do GitHuba ani do bazy.</p>
       <label for="aiEngine">Silnik</label>
       <select id="aiEngine" style="width:100%;padding:10px 12px">
-        <option value="auto">Auto — darmowe Gemini, a gdy limit się skończy: ChatGPT</option>
+        <option value="auto">Auto — Gemini → Groq → ChatGPT (kolejny, gdy poprzedni nie da rady)</option>
         <option value="gemini">Tylko Gemini (darmowe)</option>
+        <option value="groq">Tylko Groq (darmowe)</option>
         <option value="openai">Tylko ChatGPT (płatne, OpenAI)</option>
       </select>
 
@@ -515,7 +516,15 @@
       </div>
       <div class="status" id="gStatus"></div>
 
-      <label for="oKey">Klucz OpenAI (ChatGPT) — opcjonalnie</label>
+      <label for="qKey">Klucz Groq (console.groq.com) — darmowy zapas</label>
+      <div class="row">
+        <input id="qKey" type="password" placeholder="gsk_…" autocomplete="off">
+        <button class="small" id="qSave">Zapisz</button>
+      </div>
+      <div class="status" id="qStatus"></div>
+      <div class="muted small" style="margin-top:2px">Groq nie czyta obrazków ani nie szuka w Google — screeny i źródła z Google zostają przy Gemini.</div>
+
+      <label for="oKey">Klucz OpenAI (ChatGPT) — opcjonalnie, płatny</label>
       <div class="row">
         <input id="oKey" type="password" placeholder="sk-…" autocomplete="off">
         <button class="small" id="oSave">Zapisz</button>
@@ -963,19 +972,94 @@ async function openaiJSON(prompt, images){
 }
 
 /* ================= WYBÓR SILNIKA AI ================= */
-function hasAI(){ return !!(pref("geminiKey") || pref("openaiKey")); }
-function aiEngine(){ return pref("aiEngine") || "auto"; }
-async function aiJSON(prompt, temperature, schema, images){
-  const g = !!pref("geminiKey"), o = !!pref("openaiKey"), eng = aiEngine();
-  if(eng === "openai" && o) return openaiJSON(prompt, images);
-  if(eng === "gemini" && g) return geminiJSON(prompt, temperature, schema, images);
-  // auto: najpierw darmowe Gemini, a gdy nie da rady — ChatGPT
-  if(g){
-    try{ return await geminiJSON(prompt, temperature, schema, images); }
-    catch(e){ if(o && e.message !== "Nieprawidłowy klucz API"){ toast(e.quota ? "Limit Gemini — używam ChatGPT" : "Gemini nie odpowiada — używam ChatGPT"); return openaiJSON(prompt, images); } throw e; }
+/* ================= GROQ (darmowe, OpenAI-zgodne API) ================= */
+const GROQ_URL = "https://api.groq.com/openai/v1";
+const GROQ_MODELS = ["openai/gpt-oss-120b", "llama-3.3-70b-versatile", "qwen/qwen3.8-27b", "openai/gpt-oss-20b", "llama-3.1-8b-instant"];
+async function groqModels(){
+  let list = [];
+  try{ list = JSON.parse(pref("groqModelList") || "[]"); }catch(e){}
+  if(!list.length){
+    try{
+      const r = await fetch(GROQ_URL + "/models", { headers: { "Authorization": "Bearer " + pref("groqKey") } });
+      if(r.ok){
+        const ids = ((await r.json()).data || []).map(m => m.id).filter(id => !/whisper|tts|orpheus|guard|safeguard|playai|distil/i.test(id));
+        const rank = id => { const k = GROQ_MODELS.indexOf(id); return k >= 0 ? k : /gpt-oss-120b/.test(id) ? 0.5 : /70b|120b|qwen|kimi|llama-4/i.test(id) ? 3.5 : 9; };
+        list = ids.sort((x, y) => rank(x) - rank(y)).slice(0, 6);
+        if(list.length) pref("groqModelList", JSON.stringify(list));
+      }
+    }catch(e){}
   }
-  if(o) return openaiJSON(prompt, images);
-  throw new Error("NOKEY");
+  if(!list.length) list = GROQ_MODELS.slice();
+  return [pref("groqModel"), ...list].filter((m, i, a) => m && a.indexOf(m) === i);
+}
+async function groqCall(messages, json){
+  const key = pref("groqKey");
+  if(!key) throw new Error("NOKEY");
+  const errs = [];
+  for(const model of await groqModels()){
+    const body = { model, messages, temperature: 0.4, max_completion_tokens: 8192 };
+    if(json) body.response_format = { type: "json_object" };
+    if(/gpt-oss/.test(model)) body.reasoning_effort = "low";
+    for(let a = 0; a < 3; a++){
+      const r = await fetch(GROQ_URL + "/chat/completions", { method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key }, body: JSON.stringify(body) });
+      const d = await r.json().catch(() => ({}));
+      const msg = (d.error && d.error.message) || ("HTTP " + r.status);
+      if(!r.ok){
+        if(r.status === 401) throw new Error("Nieprawidłowy klucz Groq");
+        if(r.status === 400 && /reasoning/i.test(msg) && body.reasoning_effort){ delete body.reasoning_effort; continue; }
+        if(r.status === 400 && /response_format|json_object|json mode/i.test(msg) && body.response_format){ delete body.response_format; continue; }
+        if(r.status === 400 && /json_validate_failed|failed to generate json/i.test(msg) && a === 0) continue;   // zepsuty JSON — jeszcze raz
+        errs.push({ kind: r.status === 429 ? "quota" : r.status >= 500 ? "busy" : "other", msg });
+        if(r.status === 404 || /decommissioned|not found|does not exist/i.test(msg)){ pref("groqModelList", null); if(pref("groqModel") === model) pref("groqModel", null); }
+        break;                                                    // następny model
+      }
+      const text = d.choices && d.choices[0] && d.choices[0].message ? (d.choices[0].message.content || "").trim() : "";
+      if(!text){ errs.push({ kind: "other", msg: "Groq nie odpowiedział" }); break; }
+      pref("groqModel", model);
+      return text;
+    }
+  }
+  const q = errs.find(e => e.kind === "quota"), busy = errs.find(e => e.kind === "busy");
+  const e = new Error(q ? "Skończył się darmowy limit Groq na dziś" : busy ? "Groq jest przeciążony — spróbuj za chwilę" : "Groq: " + ((errs[0] && errs[0].msg) || "brak modelu"));
+  e.quota = !!q;
+  throw e;
+}
+async function groqJSON(prompt, images){
+  if(images && images.length) throw new Error("Groq nie czyta obrazków");
+  const text = await groqCall([{ role: "user", content: prompt + "\n\nOdpowiedz wyłącznie poprawnym obiektem JSON." }], true);
+  try{ return parseLoose(text); }catch(e){ throw new Error("Groq odpowiedział w złym formacie — spróbuj jeszcze raz"); }
+}
+async function groqText(msgs){
+  const text = await groqCall(msgs.map(m => ({ role: m.role === "model" ? "assistant" : "user", content: m.text })), false);
+  return { text, sources: [], suggest: "", searched: false };
+}
+
+/* ================= WYBÓR SILNIKA AI ================= */
+const ENGINE_NAMES = { gemini: "Gemini", groq: "Groq", openai: "ChatGPT" };
+function hasAI(){ return !!(pref("geminiKey") || pref("groqKey") || pref("openaiKey")); }
+function aiEngine(){ return pref("aiEngine") || "auto"; }
+function engineChain(images){
+  const has = { gemini: !!pref("geminiKey"), groq: !!pref("groqKey") && !(images && images.length), openai: !!pref("openaiKey") };
+  const eng = aiEngine();
+  return (eng === "auto" || !has[eng] ? ["gemini", "groq", "openai"] : [eng]).filter(e => has[e]);
+}
+async function aiJSON(prompt, temperature, schema, images){
+  const chain = engineChain(images);
+  if(!chain.length) throw new Error(images && images.length && pref("groqKey") ? "Groq nie czyta obrazków — do screenów potrzebny jest klucz Gemini albo OpenAI" : "NOKEY");
+  let last;
+  for(let i = 0; i < chain.length; i++){
+    const e = chain[i];
+    try{
+      if(e === "gemini") return await geminiJSON(prompt, temperature, schema, images);
+      if(e === "groq") return await groqJSON(prompt, images);
+      return await openaiJSON(prompt, images);
+    }catch(err){
+      last = err;
+      if(i < chain.length - 1) toast(`${ENGINE_NAMES[e]}: ${err.quota ? "limit na dziś" : "nie odpowiada"} — używam ${ENGINE_NAMES[chain[i + 1]]}`);
+    }
+  }
+  throw last;
 }
 
 /* ================= DARMOWY ZAPAS (gdy brak klucza Gemini) ================= */
@@ -2812,15 +2896,25 @@ async function openaiText(msgs){
 }
 async function aiChat(msgs){
   const contents = msgs.map(m => ({ role: m.role === "model" ? "model" : "user", parts: [{ text: m.text }] }));
-  const g = !!pref("geminiKey"), o = !!pref("openaiKey"), eng = aiEngine();
-  if(g && eng !== "openai"){
-    try{ return await geminiChat(contents, true); }                       // z wyszukiwaniem w Google
-    catch(e){ if(e.message === "Nieprawidłowy klucz API") throw e; }
-    try{ return await geminiChat(contents, false); }                      // zapas: bez wyszukiwania
-    catch(e){ if(!o || eng === "gemini") throw e; toast("Gemini nie odpowiada — używam ChatGPT"); }
+  const chain = engineChain();
+  if(!chain.length) throw new Error("NOKEY");
+  let last;
+  for(let i = 0; i < chain.length; i++){
+    const e = chain[i];
+    try{
+      if(e === "gemini"){
+        try{ return await geminiChat(contents, true); }                   // z wyszukiwaniem w Google
+        catch(err){ if(err.message === "Nieprawidłowy klucz API" || err.quota) throw err; }
+        return await geminiChat(contents, false);                         // zapas: bez wyszukiwania
+      }
+      if(e === "groq") return await groqText(msgs);
+      return await openaiText(msgs);
+    }catch(err){
+      last = err;
+      if(i < chain.length - 1) toast(`${ENGINE_NAMES[e]}: ${err.quota ? "limit na dziś" : "nie odpowiada"} — używam ${ENGINE_NAMES[chain[i + 1]]}`);
+    }
   }
-  if(o) return openaiText(msgs);
-  throw new Error("NOKEY");
+  throw last;
 }
 
 /* ---------- prosty Markdown + przykłady (EN:/PL:) + zadania (Q: … || … || …) ---------- */
@@ -3010,12 +3104,26 @@ function scrollHelp(toAnswer){
 /* ================= USTAWIENIA ================= */
 $("gKey").value = pref("geminiKey") || "";
 $("oKey").value = pref("openaiKey") || "";
+$("qKey").value = pref("groqKey") || "";
+$("qSave").onclick = async () => {
+  const k = $("qKey").value.trim();
+  pref("groqKey", k || null); pref("groqModel", null); pref("groqModelList", null);
+  if(!k){ $("qStatus").textContent = "Klucz Groq usunięty."; return; }
+  $("qStatus").textContent = "⏳ Sprawdzam klucz…";
+  try{
+    const r = await groqJSON(PROMPT + "recieve");
+    $("qStatus").innerHTML = `<span class="ok">✓ Działa (${esc(pref("groqModel"))})!</span> Test: „recieve” → <b>${esc(r.en)}</b> [${esc(r.pron || "")}] – ${esc(r.pl)}`;
+  }catch(e){
+    $("qStatus").innerHTML = `<span class="bad">✗ Nie działa:</span> ${esc(e.message.slice(0,160))}`;
+  }
+};
 $("aiEngine").value = aiEngine();
 $("aiEngine").onchange = () => {
   pref("aiEngine", $("aiEngine").value);
   const v = $("aiEngine").value;
   if(v === "openai" && !pref("openaiKey")) toast("Wklej najpierw klucz OpenAI");
   else if(v === "gemini" && !pref("geminiKey")) toast("Wklej najpierw klucz Gemini");
+  else if(v === "groq" && !pref("groqKey")) toast("Wklej najpierw klucz Groq");
   else toast("Zapisano");
 };
 $("oSave").onclick = async () => {
